@@ -1,18 +1,294 @@
-// Import the functions you need from the SDKs you need
-import { initializeApp } from "firebase/app";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>منصة تسجيل بطولات السوروبان وألعاب الذكاء</title>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- مكتبات Firebase للعمل المباشر في المتصفح -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
-// Your web app's Firebase configuration
-const firebaseConfig = {
-  apiKey: "AIzaSyCLQrpHzugUlCAh8sCfRJyfMxiYC6PytDw",
-  authDomain: "soroban-app-4e40f.firebaseapp.com",
-  databaseURL: "https://soroban-app-4e40f-default-rtdb.firebaseio.com",
-  projectId: "soroban-app-4e40f",
-  storageBucket: "soroban-app-4e40f.firebasestorage.app",
-  messagingSenderId: "1087784930796",
-  appId: "1:1087784930796:web:e4282ab1a205be4db604c9"
-};
+    <style>
+        :root {
+            --primary: #0284c7;
+            --primary-dark: #0369a1;
+            --border: #cbd5e1;
+            --locked-bg: #e2e8f0;
+            --zed-color: #4f46e5;
+            --success: #059669;
+            --danger: #dc2626;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Tajawal', sans-serif; }
+        body { background-color: #f1f5f9; color: #334155; padding-bottom: 50px; }
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
+        .header {
+            background: linear-gradient(135deg, #0369a1 0%, #0f172a 100%);
+            color: white; padding: 25px 15px; text-align: center;
+        }
+        .header .logo {
+            max-width: 100px; height: auto; border-radius: 50%; background: white;
+            padding: 4px; box-shadow: 0 4px 10px rgba(0,0,0,0.25); object-fit: contain; margin-bottom: 8px;
+        }
+        .header h1 { font-size: 1.5rem; font-weight: 800; margin-bottom: 5px; }
+        .header p { font-size: 0.95rem; color: #bae6fd; }
+
+        .container { max-width: 800px; margin: -20px auto 0; padding: 0 15px; }
+        .card {
+            background: white; border-radius: 16px; padding: 25px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.06); border: 1px solid #e2e8f0;
+        }
+
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+        .form-group { display: flex; flex-direction: column; gap: 5px; }
+        .form-group.full-width { grid-column: 1 / -1; }
+        
+        label { font-size: 0.88rem; font-weight: 700; color: #475569; }
+        .optional-tag { font-size: 0.78rem; font-weight: normal; color: #64748b; }
+
+        input[type="text"], input[type="date"], input[type="tel"], input[type="email"], select, textarea {
+            padding: 11px 13px; border-radius: 8px; border: 1.5px solid var(--border);
+            font-size: 0.95rem; outline: none; background: #f8fafc;
+        }
+        input:focus, select:focus, textarea:focus { border-color: var(--primary); background: #fff; }
+
+        .section-box {
+            background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px;
+            padding: 15px; margin-top: 5px;
+        }
+        .section-box-title { font-weight: 700; font-size: 0.92rem; color: #0369a1; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+        .radio-group, .checkbox-group { display: flex; flex-wrap: wrap; gap: 12px; }
+        .option-item {
+            display: flex; align-items: center; gap: 7px; background: white;
+            padding: 8px 14px; border: 1px solid var(--border); border-radius: 8px; cursor: pointer;
+            font-size: 0.9rem; font-weight: 600;
+        }
+        .option-item input { cursor: pointer; width: 16px; height: 16px; }
+
+        .btn {
+            width: 100%; margin-top: 25px; padding: 14px; background: var(--primary);
+            color: white; border: none; border-radius: 10px; font-size: 1.05rem; font-weight: 700;
+            cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 8px;
+            transition: 0.2s;
+        }
+        .btn:hover { background: var(--primary-dark); }
+        .btn:disabled { background: #94a3b8; cursor: not-allowed; }
+
+        .success-box {
+            display: none; text-align: center; padding: 15px; background: #f0fdf4;
+            border: 1px solid #86efac; border-radius: 8px; margin-top: 15px; color: #166534; font-weight: 700;
+        }
+        .error-box {
+            display: none; text-align: center; padding: 15px; background: #fef2f2;
+            border: 1px solid #fca5a5; border-radius: 8px; margin-top: 15px; color: #991b1b; font-weight: 700;
+        }
+    </style>
+</head>
+<body>
+
+    <header class="header">
+        <img src="https://i.postimg.cc/FHFhGD6k/Whats-App-Image-2026-09-03-at-21-17-15.jpg" alt="Logo" class="logo">
+        <h1 id="mainCompTitle">مسابقة موجة البحر للسوروبان وألعاب الذكاء</h1>
+        <p><i class="fa-solid fa-trophy"></i> منصة التسجيل وتحديث البيانات لمسابقة 19/09/2026</p>
+    </header>
+
+    <div class="container">
+        <div class="card">
+            <form id="regForm" onsubmit="saveToFirebase(event)">
+                <div class="form-grid">
+                    
+                    <div class="form-group">
+                        <label>إسم المركز / النادي *</label>
+                        <input type="text" id="club" placeholder="اكتب اسم المركز..." required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>إسم المدرب المشرف *</label>
+                        <input type="text" id="coach" placeholder="اسم المدرب..." required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>رقم الهاتف *</label>
+                        <input type="tel" id="phone" placeholder="(05) 55 66 77 88" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>البريد الإلكتروني <span class="optional-tag">(اختياري)</span></label>
+                        <input type="email" id="email" placeholder="example@gmail.com">
+                    </div>
+
+                    <div class="form-group">
+                        <label>إسم المرافق <span class="optional-tag">(اختياري)</span></label>
+                        <input type="text" id="chaperone" placeholder="اسم المرافق إن وجد...">
+                    </div>
+
+                    <div class="form-group">
+                        <label>لقب المشارك *</label>
+                        <input type="text" id="lastName" placeholder="لقب التلميذ..." required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>إسم المشارك *</label>
+                        <input type="text" id="firstName" placeholder="اسم التلميذ..." required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>إسم الولي <span class="optional-tag">(اختياري)</span></label>
+                        <input type="text" id="parentName" placeholder="اسم الأب أو الأم...">
+                    </div>
+
+                    <div class="form-group">
+                        <label>تاريخ الميلاد *</label>
+                        <input type="date" id="birth" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>الولاية *</label>
+                        <select id="wilaya" required>
+                            <option value="">-- اختر الولاية --</option>
+                            <option value="10 - البويرة">10 - البويرة</option>
+                            <option value="16 - الجزائر">16 - الجزائر</option>
+                            <option value="35 - بومرداس">35 - بومرداس</option>
+                            <option value="09 - البليدة">09 - البليدة</option>
+                            <option value="15 - تيزي وزو">15 - تيزي وزو</option>
+                            <option value="19 - سطيف">19 - سطيف</option>
+                            <option value="25 - قسنطينة">25 - قسنطينة</option>
+                            <option value="31 - وهران">31 - وهران</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>المستوى *</label>
+                        <select id="level" required>
+                            <option value="">-- اختر المستوى --</option>
+                            <option value="المستوى 1 (البسيط)">المستوى 1 (البسيط)</option>
+                            <option value="المستوى 2 (أصدقاء 5)">المستوى 2 (أصدقاء 5)</option>
+                            <option value="المستوى 3 (أصدقاء 10)">المستوى 3 (أصدقاء 10)</option>
+                            <option value="المستوى 4 (الضرب)">المستوى 4 (الضرب)</option>
+                            <option value="المستوى 5 (القسمة)">المستوى 5 (القسمة)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group full-width">
+                        <div class="section-box">
+                            <div class="section-box-title"><i class="fa-solid fa-bolt"></i> مسابقات السرعة الإضافية:</div>
+                            <div class="checkbox-group">
+                                <label class="option-item">
+                                    <input type="checkbox" id="chkFlash"> فلاش أنزان
+                                </label>
+                                <label class="option-item">
+                                    <input type="checkbox" id="chkCups"> الأكواب السريعة
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group full-width">
+                        <div class="section-box">
+                            <div class="section-box-title"><i class="fa-solid fa-cubes"></i> مسابقة ألعاب الذكاء:</div>
+                            <div class="radio-group">
+                                <label class="option-item">
+                                    <input type="radio" name="smartGame" value="مكعب 3×3"> مكعب 3×3
+                                </label>
+                                <label class="option-item">
+                                    <input type="radio" name="smartGame" value="مكعب 2×2"> مكعب 2×2
+                                </label>
+                                <label class="option-item">
+                                    <input type="radio" name="smartGame" value="الهرمي"> الهرمي
+                                </label>
+                                <label class="option-item">
+                                    <input type="radio" name="smartGame" value="بدون مشاركة" checked> بدون مشاركة
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group full-width">
+                        <label>ملاحظاتكم <span class="optional-tag">(اختياري)</span></label>
+                        <textarea id="notes" rows="2" placeholder="أي ملاحظة إضافية..."></textarea>
+                    </div>
+
+                </div>
+
+                <button type="submit" id="submitBtn" class="btn">
+                    <i class="fa-solid fa-paper-plane"></i> تسجيل وحفظ في Firebase 🚀
+                </button>
+            </form>
+
+            <div id="successMsg" class="success-box"></div>
+            <div id="errorMsg" class="error-box"></div>
+        </div>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyCLQrpHzugUlCAH8scFRJyfMxiYC6PytDw",
+            authDomain: "soroban-app-4e40f.firebaseapp.com",
+            databaseURL: "https://soroban-app-4e40f-default-rtdb.firebaseio.com",
+            projectId: "soroban-app-4e40f",
+            storageBucket: "soroban-app-4e40f.firebasestorage.app",
+            messagingSenderId: "1087784930796",
+            appId: "1:1087784930796:web:e4282ab1a205be4db604c9"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        function saveToFirebase(e) {
+            e.preventDefault();
+            const btn = document.getElementById('submitBtn');
+            const succBox = document.getElementById('successMsg');
+            const errBox = document.getElementById('errorMsg');
+
+            succBox.style.display = 'none';
+            errBox.style.display = 'none';
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري الحفظ الفوري...';
+
+            const selectedRadio = document.querySelector('input[name="smartGame"]:checked');
+
+            const participantData = {
+                timestamp: new Date().toLocaleString("ar-DZ"),
+                club: document.getElementById('club').value.trim(),
+                coach: document.getElementById('coach').value.trim(),
+                phone: document.getElementById('phone').value.trim(),
+                email: document.getElementById('email').value.trim(),
+                chaperone: document.getElementById('chaperone').value.trim() || "لا يوجد",
+                lastName: document.getElementById('lastName').value.trim(),
+                firstName: document.getElementById('firstName').value.trim(),
+                parentName: document.getElementById('parentName').value.trim() || "غير محدد",
+                birth: document.getElementById('birth').value,
+                wilaya: document.getElementById('wilaya').value,
+                level: document.getElementById('level').value,
+                flashAnzan: document.getElementById('chkFlash').checked ? "نعم" : "لا",
+                cups: document.getElementById('chkCups').checked ? "نعم" : "لا",
+                smartGame: selectedRadio ? selectedRadio.value : "بدون مشاركة",
+                notes: document.getElementById('notes').value.trim() || "لا توجد",
+                compTitle: "مسابقة موجة البحر للسوروبان وألعاب الذكاء",
+                compDate: "19/09/2026"
+            };
+
+            const newDocRef = db.ref("participants").push();
+
+            newDocRef.set(participantData)
+            .then(() => {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> تسجيل وحفظ في Firebase 🚀';
+                document.getElementById('regForm').reset();
+                succBox.innerHTML = '✅ تم تسجيل المشارك وحفظه فوراً في Firebase!';
+                succBox.style.display = 'block';
+
+                setTimeout(() => { succBox.style.display = 'none'; }, 5000);
+            })
+            .catch(error => {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> إعادة المحاولة';
+                errBox.innerText = '❌ حدث خطأ: ' + error.message;
+                errBox.style.display = 'block';
+            });
+        }
+    </script>
+</body>
+</html>
