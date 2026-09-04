@@ -342,7 +342,7 @@
     </div>
 
     <script>
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxiPf8zuUEjx7AxTTYYkxq8vB7Xz_dN3l8u9xUIqU4HRc1kPsXEK4k0U0WtDgPlwl8NAw/exec";
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx0G945UT9JN_0qFYvwJYN4eXiOHUlBlRt1iB5Ru3A4UJYPx0efuQLsAXl7Un5SFaNIwg/exec";
         let centerTimeout = null;
         let studentTimeout = null;
 
@@ -362,7 +362,6 @@
             });
         }
 
-        // دالة حظر تعديل المستوى للأقل
         function restrictLevels(currentLevel) {
             const levelSelect = document.getElementById('level');
             const options = levelSelect.options;
@@ -385,9 +384,9 @@
             if (currentIdx !== -1) {
                 for (let i = 1; i < options.length; i++) {
                     if (i < currentIdx) {
-                        options[i].disabled = true; // تعطيل المستويات الأقل
+                        options[i].disabled = true;
                     } else {
-                        options[i].disabled = false; // تفعيل المستوى الحالي والأعلى
+                        options[i].disabled = false;
                     }
                 }
             }
@@ -461,7 +460,6 @@
                             setWilayaValue(res.wilaya);
                             document.getElementById('level').value = res.level || '';
                             
-                            // تطبيق قفل المستويات الأقل
                             restrictLevels(res.level);
 
                             document.getElementById('notes').value = res.notes || '';
@@ -508,7 +506,7 @@
 
             const payload = {
                 compTitle: document.getElementById('mainCompTitle').innerText,
-                compDate: "19/09/2026", // تاريخ المسابقة يُسجل في العمود R
+                compDate: "19/09/2026",
                 club: document.getElementById('club').value.trim(),
                 coach: document.getElementById('coach').value.trim(),
                 phone: document.getElementById('phone').value.trim(),
