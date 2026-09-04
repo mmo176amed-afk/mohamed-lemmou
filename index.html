@@ -155,7 +155,7 @@
                     
                     <div class="form-group">
                         <label>إسم المركز / النادي *</label>
-                        <input type="text" id="club" placeholder="اكتب اسم المركز..." required oninput="triggerCenterSearch()">
+                        <input type="text" id="club" placeholder="اكتب اسم المركز..." required>
                     </div>
 
                     <div class="form-group">
@@ -180,12 +180,12 @@
 
                     <div class="form-group">
                         <label>لقب المشارك *</label>
-                        <input type="text" id="lastName" placeholder="لقب التلميذ..." required oninput="triggerStudentSearch()">
+                        <input type="text" id="lastName" placeholder="لقب التلميذ..." required>
                     </div>
 
                     <div class="form-group">
                         <label>إسم المشارك *</label>
-                        <input type="text" id="firstName" placeholder="اسم التلميذ..." required oninput="triggerStudentSearch()">
+                        <input type="text" id="firstName" placeholder="اسم التلميذ..." required>
                     </div>
 
                     <div class="form-group">
@@ -342,146 +342,8 @@
     </div>
 
     <script>
-        let centerTimeout = null;
-        let studentTimeout = null;
-
-        const lockedFields = ['club', 'coach', 'phone', 'email', 'chaperone', 'parentName', 'birth', 'wilaya'];
-
-        function setFieldsLocked(lock) {
-            lockedFields.forEach(id => {
-                const el = document.getElementById(id);
-                if (el) {
-                    el.readOnly = lock;
-                    if (el.tagName === 'SELECT') {
-                        el.style.pointerEvents = lock ? 'none' : 'auto';
-                    }
-                    if (lock) el.classList.add('is-locked');
-                    else el.classList.remove('is-locked');
-                }
-            });
-        }
-
-        // دالة حظر تعديل المستوى للأقل
-        function restrictLevels(currentLevel) {
-            const levelSelect = document.getElementById('level');
-            const options = levelSelect.options;
-            
-            if (!currentLevel) {
-                for (let i = 0; i < options.length; i++) {
-                    options[i].disabled = false;
-                }
-                return;
-            }
-
-            let currentIdx = -1;
-            for (let i = 1; i < options.length; i++) {
-                if (options[i].value === currentLevel || options[i].value.includes(currentLevel) || currentLevel.includes(options[i].value)) {
-                    currentIdx = i;
-                    break;
-                }
-            }
-
-            if (currentIdx !== -1) {
-                for (let i = 1; i < options.length; i++) {
-                    if (i < currentIdx) {
-                        options[i].disabled = true; // تعطيل المستويات الأقل
-                    } else {
-                        options[i].disabled = false; // تفعيل المستوى الحالي والأعلى
-                    }
-                }
-            }
-        }
-
-        function setWilayaValue(targetWilaya) {
-            if (!targetWilaya) return;
-            const wilayaSelect = document.getElementById('wilaya');
-            const target = targetWilaya.toString().trim();
-
-            wilayaSelect.value = target;
-
-            if (wilayaSelect.selectedIndex <= 0) {
-                for (let j = 0; j < wilayaSelect.options.length; j++) {
-                    const optText = wilayaSelect.options[j].text.trim();
-                    const optVal = wilayaSelect.options[j].value.trim();
-
-                    if (optText === target || optVal === target || optText.includes(target) || target.includes(optText)) {
-                        wilayaSelect.selectedIndex = j;
-                        break;
-                    }
-                }
-            }
-        }
-
-        function triggerCenterSearch() {
-            clearTimeout(centerTimeout);
-            const club = document.getElementById('club').value.trim();
-            if (club.length < 2) return;
-
-            centerTimeout = setTimeout(() => {
-                google.script.run.withSuccessHandler(res => {
-                    if (res && res.found) {
-                        if (res.coach) document.getElementById('coach').value = res.coach;
-                        if (res.phone) document.getElementById('phone').value = res.phone;
-                        if (res.email) document.getElementById('email').value = res.email;
-                        if (res.wilaya) setWilayaValue(res.wilaya);
-                    }
-                }).searchCenter(club);
-            }, 400);
-        }
-
-        function triggerStudentSearch() {
-            clearTimeout(studentTimeout);
-            const lastName = document.getElementById('lastName').value.trim();
-            const firstName = document.getElementById('firstName').value.trim();
-            const alertBox = document.getElementById('smartAlert');
-
-            if (lastName.length < 2 || firstName.length < 2) {
-                alertBox.style.display = 'none';
-                setFieldsLocked(false);
-                restrictLevels(null);
-                return;
-            }
-
-            studentTimeout = setTimeout(() => {
-                google.script.run.withSuccessHandler(res => {
-                    if (res && res.found) {
-                        document.getElementById('club').value = res.club || '';
-                        document.getElementById('coach').value = res.coach || '';
-                        document.getElementById('phone').value = res.phone || '';
-                        document.getElementById('email').value = res.email || '';
-                        document.getElementById('chaperone').value = res.chaperone || '';
-                        document.getElementById('parentName').value = res.parentName || '';
-                        document.getElementById('birth').value = res.birth || '';
-                        setWilayaValue(res.wilaya);
-                        document.getElementById('level').value = res.level || '';
-                        
-                        // تطبيق قفل المستويات الأقل
-                        restrictLevels(res.level);
-
-                        document.getElementById('notes').value = res.notes || '';
-                        document.getElementById('chkFlash').checked = !!res.flashAnzan;
-                        document.getElementById('chkCups').checked = !!res.cups;
-
-                        const radios = document.querySelectorAll('input[name="smartGame"]');
-                        let matched = false;
-                        radios.forEach(rb => {
-                            if (rb.value === res.smartGame) {
-                                rb.checked = true;
-                                matched = true;
-                            }
-                        });
-                        if (!matched) radios[radios.length - 1].checked = true;
-
-                        setFieldsLocked(true);
-                        alertBox.style.display = 'flex';
-                    } else {
-                        setFieldsLocked(false);
-                        restrictLevels(null);
-                        alertBox.style.display = 'none';
-                    }
-                }).searchStudent(lastName, firstName);
-            }, 400);
-        }
+        // 🔴 استبدل الرابط أدناه برابط Web App الخاص بك الذي ينتهي بـ /exec
+        const SCRIPT_URL = "ضع_رابط_WEB_APP_الخاص_بك_هنا";
 
         function submitData(e) {
             e.preventDefault();
@@ -501,7 +363,7 @@
 
             const payload = {
                 compTitle: document.getElementById('mainCompTitle').innerText,
-                compDate: "19/09/2026", // تاريخ المسابقة يُسجل في العمود R
+                compDate: "19/09/2026",
                 club: document.getElementById('club').value.trim(),
                 coach: document.getElementById('coach').value.trim(),
                 phone: document.getElementById('phone').value.trim(),
@@ -519,34 +381,36 @@
                 notes: document.getElementById('notes').value.trim()
             };
 
-            google.script.run
-                .withSuccessHandler(res => {
-                    btn.disabled = false;
-                    btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> تسجيل المشارك وحفظ البيانات';
-                    document.getElementById('regForm').reset();
-                    setFieldsLocked(false);
-                    restrictLevels(null);
-                    document.getElementById('smartAlert').style.display = 'none';
-                    
-                    if (res && res.emailSent) {
-                        succBox.innerHTML = '✅ تم حفظ وتحديث بيانات التلميذ بنجاح<br>📧 وتم إرسال بريد إلكتروني تأكيدي إلى <strong>' + payload.email + '</strong>';
-                        succBox.style.display = 'block';
-                    } else {
-                        succBox.innerHTML = '✅ تم حفظ وتحديث بيانات التلميذ بنجاح';
-                        succBox.style.display = 'block';
-                    }
-                    
-                    setTimeout(() => {
-                        succBox.style.display = 'none';
-                    }, 6000);
-                })
-                .withFailureHandler(err => {
-                    btn.disabled = false;
-                    btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> إعادة المحاولة';
-                    errBox.innerText = '❌ حدث خطأ: ' + err.message;
-                    errBox.style.display = 'block';
-                })
-                .registerOrUpdateStudent(payload);
+            fetch(SCRIPT_URL, {
+                method: "POST",
+                mode: "no-cors",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(payload)
+            })
+            .then(() => {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> تسجيل المشارك وحفظ البيانات';
+                document.getElementById('regForm').reset();
+                
+                if (payload.email) {
+                    succBox.innerHTML = '✅ تم حفظ وتحديث بيانات التلميذ بنجاح<br>📧 وتم إرسال بريد إلكتروني تأكيدي إلى <strong>' + payload.email + '</strong>';
+                } else {
+                    succBox.innerHTML = '✅ تم حفظ وتحديث بيانات التلميذ بنجاح في الجدول!';
+                }
+                succBox.style.display = 'block';
+                
+                setTimeout(() => {
+                    succBox.style.display = 'none';
+                }, 6000);
+            })
+            .catch(err => {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> إعادة المحاولة';
+                errBox.innerText = '❌ حدث خطأ في الاتصال: ' + err.message;
+                errBox.style.display = 'block';
+            });
         }
     </script>
 </body>
