@@ -6,14 +6,6 @@
     <title>منصة تسجيل بطولات السوروبان وألعاب الذكاء</title>
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <!-- مكتبات Firebase للاتصال بقاعدة البيانات السحابية -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-    
-    <!-- مكتبة تصدير ملفات Excel الاحترافية -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-
     <style>
         :root {
             --primary: #0284c7;
@@ -21,8 +13,6 @@
             --border: #cbd5e1;
             --locked-bg: #e2e8f0;
             --zed-color: #4f46e5;
-            --excel-color: #107c41;
-            --excel-dark: #0b5a2f;
             --success: #059669;
             --danger: #dc2626;
         }
@@ -121,264 +111,6 @@
             transform: translateY(-1px);
         }
 
-        .btn-container { display: flex; flex-direction: column; gap: 12px; margin-top: 25px; }
-
-        .btn {
-            width: 100%; padding: 14px; background: var(--primary);
-            color: white; border: none; border-radius: 10px; font-size: 1.05rem; font-weight: 700;
-            cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 8px;
-            transition: 0.2s;
-        }
-        .btn:hover { background: var(--primary-dark); }
-        .btn:disabled { background: #94a3b8; cursor: not-allowed; }
-
-        .btn-excel {
-            background: var(--excel-color);
-            color: white;
-            font-size: 0.95rem;
-        }
-        .btn-excel:hover { background: var(--excel-dark); }
-
-        .success-box {
-            display: none; text-align: center; padding: 15px; background: #f0fdf4;
-            border: 1px solid #86efac; border-radius: 8px; margin-top: 15px; color: #166534; font-weight: 700;
-        }
-        .error-box {
-            display: none; text-align: center; padding: 15px; background: #fef2f2;
-            border: 1px solid #fca5a5; border-radius: 8px; margin-top: 15px; color: #991b1b; font-weight: 700;
-        }
-    </style>
-</head>
-<body>
-
-    <header class="header">
-        <img src="https://i.postimg.cc/FHFhGD6k/Whats-App-Image-2026-09-03-at-21-17-15.jpg" alt="Logo" class="logo">
-        <h1 id="mainCompTitle">مسابقة موجة البحر للسوروبان وألعاب الذكاء</h1>
-        <p><i class="fa-solid fa-trophy"></i> منصة التسجيل وتحديث البيانات لمسابقة 19/09/2026</p>
-    </header>
-
-    <div class="container">
-        <div class="card">
-            
-            <div id="smartAlert" class="smart-alert">
-                <i class="fa-solid fa-circle-check"></i>
-                <span id="alertText">تم استرجاع بيانات المشارك المسجل مسبقاً بنجاح! يمكنك الآن ترقية المستوى أو تعديل الاختيارات.</span>
-            </div>
-
-            <form id="regForm" onsubmit="saveToFirebase(event)">
-                <div class="form-grid">
-                    
-                    <div class="form-group">
-                        <label>إسم المركز / النادي *</label>
-                        <input type="text" id="club" placeholder="اكتب اسم المركز..." required oninput="triggerCenterSearch()">
-                    </div>
-
-                    <div class="form-group">
-                        <label>إسم المدرب المشرف *</label>
-                        <input type="text" id="coach" placeholder="اسم المدرب..." required>
-                    </div>
-
-                    <div class="form-group">
-                        <label>رقم الهاتف *</label>
-                        <input type="tel" id="phone" placeholder="(05) 55 66 77 88" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label>البريد الإلكتروني <span class="optional-tag">(اختياري)</span></label>
-                        <input type="email" id="email" placeholder="example@gmail.com">
-                    </div>
-
-                    <div class="form-group">
-                        <label>إسم المرافق <span class="optional-tag">(اختياري)</span></label>
-                        <input type="text" id="chaperone" placeholder="اسم المرافق إن وجد...">
-                    </div>
-
-                    <div class="form-group">
-                        <label>لقب المشارك *</label>
-                        <input type="text" id="lastName" placeholder="لقب التلميذ..." required oninput="triggerStudentSearch()">
-                    </div>
-
-                    <div class="form-group">
-                        <label>إسم المشارك *</label>
-                        <input type="text" id="firstName" placeholder="اسم التلميذ..." required oninput="triggerStudentSearch()">
-                    </div>
-
-                    <div class="form-group">
-                        <label>إسم الولي <span class="optional-tag">(اختياري)</span></label>
-                        <input type="text" id="parentName" placeholder="اسم الأب أو الأم...">
-                    </div>
-
-                    <div class="form-group">
-                        <label>تاريخ الميلاد *</label>
-                        <input type="date" id="birth" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label>الولاية *</label>
-                        <select id="wilaya" required>
-                            <option value="">-- اختر الولاية --</option>
-                            <option value="01 - أدرار">01 - أدرار</option>
-                            <option value="02 - الشلف">02 - الشلف</option>
-                            <option value="03 - الأغواط">03 - الأغواط</option>
-                            <option value="04 - أم البواقي">04 - أم البواقي</option>
-                            <option value="05 - باتنة">05 - باتنة</option>
-                            <option value="06 - بجاية">06 - بجاية</option>
-                            <option value="07 - بسكرة">07 - بسكرة</option>
-                            <option value="08 - بشار">08 - بشار</option>
-                            <option value="09 - البليدة">09 - البليدة</option>
-                            <option value="10 - البويرة">10 - البويرة</option>
-                            <option value="11 - تمنراست">11 - تمنراست</option>
-                            <option value="12 - تبسة">12 - تبسة</option>
-                            <option value="13 - تلمسان">13 - تلمسان</option>
-                            <option value="14 - تيارت">14 - تيارت</option>
-                            <option value="15 - تيزي وزو">15 - تيزي وزو</option>
-                            <option value="16 - الجزائر">16 - الجزائر</option>
-                            <option value="17 - الجلفة">17 - الجلفة</option>
-                            <option value="18 - جيجل">18 - جيجل</option>
-إليك الكود الأصلي والكامل لصفحة **`index.html`** مع إضافة الميزات التالية:
-
-1. **حفظ فوري في Firebase Realtime Database** بدون أي مشاكل تعليق أو أخطاء CORS.
-2. **زر مدمج وأنيق لتحميل قائمة المشاركين كملف Excel (`.xlsx`)** مرتب بضغطة زر واحدة.
-3. **البحث التلقائي الذكي**، قفل الخانات عند وجود المشارك مسبقاً، واحتساب الفئات بدقة.
-
----
-
-### الكود الكامل لملف `index.html`
-
-افتح ملف `index.html` في **GitHub**، وامسح محتواه بالكامل، ثم الصق هذا الكود:
-
-```html
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>منصة تسجيل بطولات السوروبان وألعاب الذكاء</title>
-    <link href="[https://fonts.googleapis.com/css2?family=Tajawal:wght@400;600;700;800&display=swap](https://fonts.googleapis.com/css2?family=Tajawal:wght@400;600;700;800&display=swap)" rel="stylesheet">
-    <link rel="stylesheet" href="[https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css](https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css)">
-    
-    <!-- مكتبات Firebase -->
-    <script src="[https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js](https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js)"></script>
-    <script src="[https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js](https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js)"></script>
-
-    <!-- مكتبة تصدير ملفات Excel الاحترافية (SheetJS) -->
-    <script src="[https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js](https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js)"></script>
-
-    <style>
-        :root {
-            --primary: #0284c7;
-            --primary-dark: #0369a1;
-            --excel-green: #107c41;
-            --excel-dark: #0c5e31;
-            --border: #cbd5e1;
-            --locked-bg: #e2e8f0;
-            --zed-color: #4f46e5;
-            --success: #059669;
-            --danger: #dc2626;
-        }
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Tajawal', sans-serif; }
-        body { background-color: #f1f5f9; color: #334155; padding-bottom: 50px; }
-
-        .header {
-            background: linear-gradient(135deg, #0369a1 0%, #0f172a 100%);
-            color: white; padding: 25px 15px; text-align: center;
-        }
-        .header .logo {
-            max-width: 100px; height: auto; border-radius: 50%; background: white;
-            padding: 4px; box-shadow: 0 4px 10px rgba(0,0,0,0.25); object-fit: contain; margin-bottom: 8px;
-        }
-        .header h1 { font-size: 1.5rem; font-weight: 800; margin-bottom: 5px; }
-        .header p { font-size: 0.95rem; color: #bae6fd; }
-
-        .container { max-width: 850px; margin: -20px auto 0; padding: 0 15px; }
-        .card {
-            background: white; border-radius: 16px; padding: 25px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.06); border: 1px solid #e2e8f0;
-        }
-
-        .admin-bar {
-            display: flex; justify-content: space-between; align-items: center;
-            background: #f8fafc; border: 1px dashed #94a3b8; border-radius: 10px;
-            padding: 12px 18px; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;
-        }
-        .btn-excel {
-            background: var(--excel-green); color: white; border: none; padding: 9px 18px;
-            border-radius: 8px; font-weight: 700; cursor: pointer; display: inline-flex;
-            align-items: center; gap: 8px; font-size: 0.9rem; transition: 0.2s;
-        }
-        .btn-excel:hover { background: var(--excel-dark); }
-
-        .smart-alert {
-            display: none; background: #ecfdf5; border: 1px solid #6ee7b7; color: #065f46;
-            padding: 12px 14px; border-radius: 8px; margin-bottom: 20px; font-size: 0.9rem; align-items: center; gap: 8px;
-        }
-
-        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
-        .form-group { display: flex; flex-direction: column; gap: 5px; }
-        .form-group.full-width { grid-column: 1 / -1; }
-        
-        label { font-size: 0.88rem; font-weight: 700; color: #475569; }
-        .optional-tag { font-size: 0.78rem; font-weight: normal; color: #64748b; }
-
-        input[type="text"], input[type="date"], input[type="tel"], input[type="email"], select, textarea {
-            padding: 11px 13px; border-radius: 8px; border: 1.5px solid var(--border);
-            font-size: 0.95rem; outline: none; background: #f8fafc;
-        }
-        input:focus, select:focus, textarea:focus { border-color: var(--primary); background: #fff; }
-        
-        .is-locked {
-            background-color: var(--locked-bg) !important;
-            cursor: not-allowed;
-            color: #475569;
-        }
-
-        .section-box {
-            background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px;
-            padding: 15px; margin-top: 5px;
-        }
-        .section-box-title { font-weight: 700; font-size: 0.92rem; color: #0369a1; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
-        .radio-group, .checkbox-group { display: flex; flex-wrap: wrap; gap: 12px; }
-        .option-item {
-            display: flex; align-items: center; gap: 7px; background: white;
-            padding: 8px 14px; border: 1px solid var(--border); border-radius: 8px; cursor: pointer;
-            font-size: 0.9rem; font-weight: 600;
-        }
-        .option-item input { cursor: pointer; width: 16px; height: 16px; }
-
-        .zed-banner {
-            margin-top: 20px;
-            background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%);
-            border: 1.5px solid #c7d2fe;
-            border-radius: 12px;
-            padding: 15px 18px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            flex-wrap: wrap;
-            gap: 12px;
-        }
-        .zed-title {
-            font-size: 0.95rem;
-            font-weight: 800;
-            color: #3730a3;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .zed-link {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            background-color: var(--zed-color);
-            color: white !important;
-            text-decoration: none;
-            padding: 9px 16px;
-            border-radius: 8px;
-            font-size: 0.88rem;
-            font-weight: 700;
-            transition: 0.2s;
-        }
-
         .btn {
             width: 100%; margin-top: 25px; padding: 14px; background: var(--primary);
             color: white; border: none; border-radius: 10px; font-size: 1.05rem; font-weight: 700;
@@ -396,12 +128,16 @@
             display: none; text-align: center; padding: 15px; background: #fef2f2;
             border: 1px solid #fca5a5; border-radius: 8px; margin-top: 15px; color: #991b1b; font-weight: 700;
         }
+        .warning-box {
+            display: none; text-align: center; padding: 15px; background: #fffbeb;
+            border: 1px solid #fcd34d; border-radius: 8px; margin-top: 15px; color: #92400e; font-weight: 700;
+        }
     </style>
 </head>
 <body>
 
     <header class="header">
-        <img src="[https://i.postimg.cc/FHFhGD6k/Whats-App-Image-2026-09-03-at-21-17-15.jpg](https://i.postimg.cc/FHFhGD6k/Whats-App-Image-2026-09-03-at-21-17-15.jpg)" alt="Logo" class="logo">
+        <img src="https://i.postimg.cc/FHFhGD6k/Whats-App-Image-2026-09-03-at-21-17-15.jpg" alt="شعار مسابقة موجة البحر للسوروبان" class="logo">
         <h1 id="mainCompTitle">مسابقة موجة البحر للسوروبان وألعاب الذكاء</h1>
         <p><i class="fa-solid fa-trophy"></i> منصة التسجيل وتحديث البيانات لمسابقة 19/09/2026</p>
     </header>
@@ -409,22 +145,12 @@
     <div class="container">
         <div class="card">
             
-            <!-- شريط تصدير ملف الإكسيل المباشر -->
-            <div class="admin-bar">
-                <div>
-                    <i class="fa-solid fa-database text-primary"></i> <strong>قاعدة البيانات:</strong> متصلة بـ Firebase
-                </div>
-                <button type="button" class="btn-excel" onclick="exportToExcel()">
-                    <i class="fa-solid fa-file-excel"></i> تحميل قائمة المسجلين (Excel)
-                </button>
-            </div>
-
             <div id="smartAlert" class="smart-alert">
                 <i class="fa-solid fa-lock"></i>
-                <span id="alertText">تم استرجاع بيانات المشارك مسبقاً! تم قفل البيانات الأساسية لمنع التكرار، ويمكنك تحديث المستوى والمشاركات.</span>
+                <span id="alertText">تم استرجاع بيانات المشارك! تم قفل البيانات الشخصية، ويمكنك فقط ترقية المستوى، ألعاب الذكاء، والملاحظات.</span>
             </div>
 
-            <form id="regForm" onsubmit="saveToFirebase(event)">
+            <form id="regForm" onsubmit="submitData(event)">
                 <div class="form-grid">
                     
                     <div class="form-group">
@@ -494,4 +220,292 @@
                             <option value="16 - الجزائر">16 - الجزائر</option>
                             <option value="17 - الجلفة">17 - الجلفة</option>
                             <option value="18 - جيجل">18 - جيجل</option>
-                            <option
+                            <option value="19 - سطيف">19 - سطيف</option>
+                            <option value="20 - سعيدة">20 - سعيدة</option>
+                            <option value="21 - سكيكدة">21 - سكيكدة</option>
+                            <option value="22 - سيدي بلعباس">22 - سيدي بلعباس</option>
+                            <option value="23 - عنابة">23 - عنابة</option>
+                            <option value="24 - قالمة">24 - قالمة</option>
+                            <option value="25 - قسنطينة">25 - قسنطينة</option>
+                            <option value="26 - المدية">26 - المدية</option>
+                            <option value="27 - مستغانم">27 - مستغانم</option>
+                            <option value="28 - المسيلة">28 - المسيلة</option>
+                            <option value="29 - معسكر">29 - معسكر</option>
+                            <option value="30 - ورقلة">30 - ورقلة</option>
+                            <option value="31 - وهران">31 - وهران</option>
+                            <option value="32 - البيض">32 - البيض</option>
+                            <option value="33 - إليزي">33 - إليزي</option>
+                            <option value="34 - برج بوعريريج">34 - برج بوعريريج</option>
+                            <option value="35 - بومرداس">35 - بومرداس</option>
+                            <option value="36 - الطارف">36 - الطارف</option>
+                            <option value="37 - تندوف">37 - تندوف</option>
+                            <option value="38 - تسمسيلت">38 - تسمسيلت</option>
+                            <option value="39 - الوادي">39 - الوادي</option>
+                            <option value="40 - خنشلة">40 - خنشلة</option>
+                            <option value="41 - سوق أهراس">41 - سوق أهراس</option>
+                            <option value="42 - تيبازة">42 - تيبازة</option>
+                            <option value="43 - ميلة">43 - ميلة</option>
+                            <option value="44 - عين الدفلى">44 - عين الدفلى</option>
+                            <option value="45 - النعامة">45 - النعامة</option>
+                            <option value="46 - عين تموشنت">46 - عين تموشنت</option>
+                            <option value="47 - غرداية">47 - غرداية</option>
+                            <option value="48 - غليزان">48 - غليزان</option>
+                            <option value="49 - تيميمون">49 - تيميمون</option>
+                            <option value="50 - برج باجي مختار">50 - برج باجي مختار</option>
+                            <option value="51 - أولاد جلال">51 - أولاد جلال</option>
+                            <option value="52 - بني عباس">52 - بني عباس</option>
+                            <option value="53 - عين صالح">53 - عين صالح</option>
+                            <option value="54 - عين قزام">54 - عين قزام</option>
+                            <option value="55 - تقرت">55 - تقرت</option>
+                            <option value="56 - جانت">56 - جانت</option>
+                            <option value="57 - المغير">57 - المغير</option>
+                            <option value="58 - المنيعة">58 - المنيعة</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>المستوى *</label>
+                        <select id="level" required>
+                            <option value="">-- اختر المستوى --</option>
+                            <option value="المستوى 1 (البسيط)">المستوى 1 (البسيط)</option>
+                            <option value="المستوى 2 (أصدقاء 5)">المستوى 2 (أصدقاء 5)</option>
+                            <option value="المستوى 3 (أصدقاء 10)">المستوى 3 (أصدقاء 10)</option>
+                            <option value="المستوى 4 (الضرب)">المستوى 4 (الضرب)</option>
+                            <option value="المستوى 5 (القسمة)">المستوى 5 (القسمة)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group full-width">
+                        <div class="section-box">
+                            <div class="section-box-title"><i class="fa-solid fa-bolt"></i> مسابقات السرعة الإضافية:</div>
+                            <div class="checkbox-group">
+                                <label class="option-item">
+                                    <input type="checkbox" id="chkFlash"> فلاش أنزان
+                                </label>
+                                <label class="option-item">
+                                    <input type="checkbox" id="chkCups"> الأكواب السريعة
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group full-width">
+                        <div class="section-box">
+                            <div class="section-box-title"><i class="fa-solid fa-cubes"></i> مسابقة ألعاب الذكاء (اختر صنفاً واحداً):</div>
+                            <div class="radio-group">
+                                <label class="option-item">
+                                    <input type="radio" name="smartGame" value="مكعب 3×3"> مكعب 3×3
+                                </label>
+                                <label class="option-item">
+                                    <input type="radio" name="smartGame" value="مكعب 2×2"> مكعب 2×2
+                                </label>
+                                <label class="option-item">
+                                    <input type="radio" name="smartGame" value="الهرمي"> الهرمي
+                                </label>
+                                <label class="option-item">
+                                    <input type="radio" name="smartGame" value="الأسطوانة"> الأسطوانة
+                                </label>
+                                <label class="option-item">
+                                    <input type="radio" name="smartGame" value="بدون مشاركة" checked> بدون مشاركة
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group full-width">
+                        <label>ملاحظاتكم <span class="optional-tag">(اختياري)</span></label>
+                        <textarea id="notes" rows="2" placeholder="أي ملاحظة أو اقتراح إضافي..."></textarea>
+                    </div>
+
+                </div>
+
+                <div class="zed-banner">
+                    <div class="zed-title">
+                        <i class="fa-solid fa-circle-info"></i>
+                        <span>معلومات خاصة بمنصة Zed Soroban وتحميل نماذج المسابقات</span>
+                    </div>
+                    <a href="https://zed-app.github.io/zedsoroban/" target="_blank" class="zed-link">
+                        <span>زيارة المنصة</span>
+                        <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                    </a>
+                </div>
+
+                <button type="submit" id="submitBtn" class="btn">
+                    <i class="fa-solid fa-paper-plane"></i> تسجيل المشارك وحفظ البيانات
+                </button>
+            </form>
+
+            <div id="successMsg" class="success-box"></div>
+            <div id="warningMsg" class="warning-box"></div>
+            <div id="errorMsg" class="error-box"></div>
+        </div>
+    </div>
+
+    <script>
+        // 🔴 الصق رابط Web App الخاص بك هنا
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxZmHx6Uu_LDZcyZph-amGxS8VzYMU0bLqD65wL-guuBhg3pdR-VdBotlzX3bVgrSGVeg/exec";
+
+        let centerTimeout = null;
+        let studentTimeout = null;
+
+        const lockedFields = ['club', 'coach', 'phone', 'email', 'chaperone', 'parentName', 'birth', 'wilaya'];
+
+        function setFieldsLocked(lock) {
+            lockedFields.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    el.readOnly = lock;
+                    if (el.tagName === 'SELECT') {
+                        el.style.pointerEvents = lock ? 'none' : 'auto';
+                    }
+                    if (lock) el.classList.add('is-locked');
+                    else el.classList.remove('is-locked');
+                }
+            });
+        }
+
+        // دالة حظر تعديل المستوى للأقل
+        function restrictLevels(currentLevel) {
+            const levelSelect = document.getElementById('level');
+            const options = levelSelect.options;
+            
+            if (!currentLevel) {
+                for (let i = 0; i < options.length; i++) {
+                    options[i].disabled = false;
+                }
+                return;
+            }
+
+            let currentIdx = -1;
+            for (let i = 1; i < options.length; i++) {
+                if (options[i].value === currentLevel || options[i].value.includes(currentLevel) || currentLevel.includes(options[i].value)) {
+                    currentIdx = i;
+                    break;
+                }
+            }
+
+            if (currentIdx !== -1) {
+                for (let i = 1; i < options.length; i++) {
+                    if (i < currentIdx) {
+                        options[i].disabled = true; // تعطيل المستويات الأقل
+                    } else {
+                        options[i].disabled = false; // تفعيل المستوى الحالي والأعلى
+                    }
+                }
+            }
+        }
+
+        function setWilayaValue(targetWilaya) {
+            if (!targetWilaya) return;
+            const wilayaSelect = document.getElementById('wilaya');
+            const target = targetWilaya.toString().trim();
+
+            wilayaSelect.value = target;
+
+            if (wilayaSelect.selectedIndex <= 0) {
+                for (let j = 0; j < wilayaSelect.options.length; j++) {
+                    const optText = wilayaSelect.options[j].text.trim();
+                    const optVal = wilayaSelect.options[j].value.trim();
+
+                    if (optText === target || optVal === target || optText.includes(target) || target.includes(optText)) {
+                        wilayaSelect.selectedIndex = j;
+                        break;
+                    }
+                }
+            }
+        }
+
+        function triggerCenterSearch() {
+            clearTimeout(centerTimeout);
+            const club = document.getElementById('club').value.trim();
+            if (club.length < 2) return;
+        }
+
+        function triggerStudentSearch() {
+            clearTimeout(studentTimeout);
+            const lastName = document.getElementById('lastName').value.trim();
+            const firstName = document.getElementById('firstName').value.trim();
+            const alertBox = document.getElementById('smartAlert');
+
+            if (lastName.length < 2 || firstName.length < 2) {
+                alertBox.style.display = 'none';
+                setFieldsLocked(false);
+                restrictLevels(null);
+                return;
+            }
+        }
+
+        function submitData(e) {
+            e.preventDefault();
+            const btn = document.getElementById('submitBtn');
+            const errBox = document.getElementById('errorMsg');
+            const succBox = document.getElementById('successMsg');
+            const warningBox = document.getElementById('warningMsg');
+            
+            errBox.style.display = 'none';
+            succBox.style.display = 'none';
+            warningBox.style.display = 'none';
+
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري الحفظ والتحديث...';
+
+            const selectedRadio = document.querySelector('input[name="smartGame"]:checked');
+
+            const payload = {
+                compTitle: document.getElementById('mainCompTitle').innerText,
+                compDate: "19/09/2026",
+                club: document.getElementById('club').value.trim(),
+                coach: document.getElementById('coach').value.trim(),
+                phone: document.getElementById('phone').value.trim(),
+                email: document.getElementById('email').value.trim(),
+                chaperone: document.getElementById('chaperone').value.trim(),
+                lastName: document.getElementById('lastName').value.trim(),
+                firstName: document.getElementById('firstName').value.trim(),
+                parentName: document.getElementById('parentName').value.trim(),
+                birth: document.getElementById('birth').value,
+                wilaya: document.getElementById('wilaya').value,
+                level: document.getElementById('level').value,
+                flashAnzan: document.getElementById('chkFlash').checked,
+                cups: document.getElementById('chkCups').checked,
+                smartGame: selectedRadio ? selectedRadio.value : "بدون مشاركة",
+                notes: document.getElementById('notes').value.trim()
+            };
+
+            // إرسال البيانات بشكل متوافق بنسبة 100% مع Google Apps Script من GitHub
+            fetch(SCRIPT_URL, {
+                method: "POST",
+                mode: "no-cors",
+                headers: {
+                    "Content-Type": "text/plain;charset=utf-8"
+                },
+                body: JSON.stringify(payload)
+            })
+            .then(() => {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> تسجيل المشارك وحفظ البيانات';
+                document.getElementById('regForm').reset();
+                setFieldsLocked(false);
+                restrictLevels(null);
+                document.getElementById('smartAlert').style.display = 'none';
+                
+                if (payload.email) {
+                    succBox.innerHTML = '✅ تم حفظ وتحديث بيانات التلميذ بنجاح في الشيت<br>📧 وتم إرسال بريد إلكتروني تأكيدي إلى <strong>' + payload.email + '</strong>';
+                } else {
+                    succBox.innerHTML = '✅ تم حفظ وتحديث بيانات التلميذ بنجاح في الجدول!';
+                }
+                succBox.style.display = 'block';
+                
+                setTimeout(() => {
+                    succBox.style.display = 'none';
+                }, 6000);
+            })
+            .catch(err => {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> إعادة المحاولة';
+                errBox.innerText = '❌ حدث خطأ في الاتصال: ' + err.message;
+                errBox.style.display = 'block';
+            });
+        }
+    </script>
+</body>
+</html>
