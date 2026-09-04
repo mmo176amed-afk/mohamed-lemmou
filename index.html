@@ -6,6 +6,14 @@
     <title>منصة تسجيل بطولات السوروبان وألعاب الذكاء</title>
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- مكتبات Firebase للاتصال المباشر -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+    <!-- مكتبة تصدير ملفات Excel -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+
     <style>
         :root {
             --primary: #0284c7;
@@ -119,6 +127,14 @@
         }
         .btn:hover { background: var(--primary-dark); }
         .btn:disabled { background: #94a3b8; cursor: not-allowed; }
+
+        .excel-btn {
+            width: 100%; margin-top: 15px; padding: 12px; background: #166534;
+            color: white; border: none; border-radius: 10px; font-size: 1rem; font-weight: 700;
+            cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 8px;
+            transition: 0.2s;
+        }
+        .excel-btn:hover { background: #14532d; }
 
         .success-box {
             display: none; text-align: center; padding: 15px; background: #f0fdf4;
@@ -335,6 +351,10 @@
                 </button>
             </form>
 
+            <button type="button" onclick="exportToExcel()" class="excel-btn">
+                <i class="fa-solid fa-file-excel"></i> 📥 تحميل قائمة المسجلين (ملف Excel)
+            </button>
+
             <div id="successMsg" class="success-box"></div>
             <div id="warningMsg" class="warning-box"></div>
             <div id="errorMsg" class="error-box"></div>
@@ -342,11 +362,23 @@
     </div>
 
     <script>
-        // 🔴 الصق رابط Web App الخاص بك هنا
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxZmHx6Uu_LDZcyZph-amGxS8VzYMU0bLqD65wL-guuBhg3pdR-VdBotlzX3bVgrSGVeg/exec";
+        // إعدادات Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyCLQrpHzugUlCAH8scFRJyfMxiYC6PytDw",
+            authDomain: "soroban-app-4e40f.firebaseapp.com",
+            databaseURL: "https://soroban-app-4e40f-default-rtdb.firebaseio.com",
+            projectId: "soroban-app-4e40f",
+            storageBucket: "soroban-app-4e40f.firebasestorage.app",
+            messagingSenderId: "1087784930796",
+            appId: "1:1087784930796:web:e4282ab1a205be4db604c9"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
 
         let centerTimeout = null;
         let studentTimeout = null;
+        let existingStudentKey = null;
 
         const lockedFields = ['club', 'coach', 'phone', 'email', 'chaperone', 'parentName', 'birth', 'wilaya'];
 
@@ -364,7 +396,6 @@
             });
         }
 
-        // دالة حظر تعديل المستوى للأقل
         function restrictLevels(currentLevel) {
             const levelSelect = document.getElementById('level');
             const options = levelSelect.options;
@@ -387,9 +418,9 @@
             if (currentIdx !== -1) {
                 for (let i = 1; i < options.length; i++) {
                     if (i < currentIdx) {
-                        options[i].disabled = true; // تعطيل المستويات الأقل
+                        options[i].disabled = true;
                     } else {
-                        options[i].disabled = false; // تفعيل المستوى الحالي والأعلى
+                        options[i].disabled = false;
                     }
                 }
             }
@@ -415,12 +446,31 @@
             }
         }
 
+        // البحث التلقائي عن بيانات المركز من قاعدة Firebase
         function triggerCenterSearch() {
             clearTimeout(centerTimeout);
             const club = document.getElementById('club').value.trim();
             if (club.length < 2) return;
+
+            centerTimeout = setTimeout(() => {
+                db.ref("participants").once("value", snapshot => {
+                    const data = snapshot.val();
+                    if (data) {
+                        for (let key in data) {
+                            if (data[key].club && data[key].club.trim().toLowerCase() === club.toLowerCase()) {
+                                if (data[key].coach) document.getElementById('coach').value = data[key].coach;
+                                if (data[key].phone) document.getElementById('phone').value = data[key].phone;
+                                if (data[key].email) document.getElementById('email').value = data[key].email;
+                                if (data[key].wilaya) setWilayaValue(data[key].wilaya);
+                                break;
+                            }
+                        }
+                    }
+                });
+            }, 400);
         }
 
+        // البحث التلقائي عن التلميذ في Firebase لاسترجاع بياناته وقفلها
         function triggerStudentSearch() {
             clearTimeout(studentTimeout);
             const lastName = document.getElementById('lastName').value.trim();
@@ -431,20 +481,75 @@
                 alertBox.style.display = 'none';
                 setFieldsLocked(false);
                 restrictLevels(null);
+                existingStudentKey = null;
                 return;
             }
+
+            studentTimeout = setTimeout(() => {
+                db.ref("participants").once("value", snapshot => {
+                    const data = snapshot.val();
+                    let found = false;
+                    if (data) {
+                        for (let key in data) {
+                            const p = data[key];
+                            if (p.lastName && p.firstName && 
+                                p.lastName.trim().toLowerCase() === lastName.toLowerCase() && 
+                                p.firstName.trim().toLowerCase() === firstName.toLowerCase()) {
+                                
+                                found = true;
+                                existingStudentKey = key;
+                                document.getElementById('club').value = p.club || '';
+                                document.getElementById('coach').value = p.coach || '';
+                                document.getElementById('phone').value = p.phone || '';
+                                document.getElementById('email').value = p.email || '';
+                                document.getElementById('chaperone').value = p.chaperone || '';
+                                document.getElementById('parentName').value = p.parentName || '';
+                                document.getElementById('birth').value = p.birth || '';
+                                setWilayaValue(p.wilaya);
+                                document.getElementById('level').value = p.level || '';
+                                
+                                restrictLevels(p.level);
+
+                                document.getElementById('notes').value = p.notes || '';
+                                document.getElementById('chkFlash').checked = p.flashAnzan === "نعم" || p.flashAnzan === true;
+                                document.getElementById('chkCups').checked = p.cups === "نعم" || p.cups === true;
+
+                                const radios = document.querySelectorAll('input[name="smartGame"]');
+                                let matched = false;
+                                radios.forEach(rb => {
+                                    if (rb.value === p.smartGame) {
+                                        rb.checked = true;
+                                        matched = true;
+                                    }
+                                });
+                                if (!matched) radios[radios.length - 1].checked = true;
+
+                                setFieldsLocked(true);
+                                alertBox.style.display = 'flex';
+                                break;
+                            }
+                        }
+                    }
+
+                    if (!found) {
+                        setFieldsLocked(false);
+                        restrictLevels(null);
+                        alertBox.style.display = 'none';
+                        existingStudentKey = null;
+                    }
+                });
+            }, 400);
         }
 
+        // حفظ أو تحديث البيانات في Firebase
         function submitData(e) {
             e.preventDefault();
             const btn = document.getElementById('submitBtn');
             const errBox = document.getElementById('errorMsg');
             const succBox = document.getElementById('successMsg');
-            const warningBox = document.getElementById('warningMsg');
             
             errBox.style.display = 'none';
             succBox.style.display = 'none';
-            warningBox.style.display = 'none';
 
             btn.disabled = true;
             btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري الحفظ والتحديث...';
@@ -458,28 +563,23 @@
                 coach: document.getElementById('coach').value.trim(),
                 phone: document.getElementById('phone').value.trim(),
                 email: document.getElementById('email').value.trim(),
-                chaperone: document.getElementById('chaperone').value.trim(),
+                chaperone: document.getElementById('chaperone').value.trim() || "لا يوجد",
                 lastName: document.getElementById('lastName').value.trim(),
                 firstName: document.getElementById('firstName').value.trim(),
-                parentName: document.getElementById('parentName').value.trim(),
+                parentName: document.getElementById('parentName').value.trim() || "غير محدد",
                 birth: document.getElementById('birth').value,
                 wilaya: document.getElementById('wilaya').value,
                 level: document.getElementById('level').value,
-                flashAnzan: document.getElementById('chkFlash').checked,
-                cups: document.getElementById('chkCups').checked,
+                flashAnzan: document.getElementById('chkFlash').checked ? "نعم" : "لا",
+                cups: document.getElementById('chkCups').checked ? "نعم" : "لا",
                 smartGame: selectedRadio ? selectedRadio.value : "بدون مشاركة",
-                notes: document.getElementById('notes').value.trim()
+                notes: document.getElementById('notes').value.trim() || "لا توجد",
+                updatedAt: new Date().toLocaleString("ar-DZ")
             };
 
-            // إرسال البيانات بشكل متوافق بنسبة 100% مع Google Apps Script من GitHub
-            fetch(SCRIPT_URL, {
-                method: "POST",
-                mode: "no-cors",
-                headers: {
-                    "Content-Type": "text/plain;charset=utf-8"
-                },
-                body: JSON.stringify(payload)
-            })
+            const targetRef = existingStudentKey ? db.ref("participants/" + existingStudentKey) : db.ref("participants").push();
+
+            targetRef.set(payload)
             .then(() => {
                 btn.disabled = false;
                 btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> تسجيل المشارك وحفظ البيانات';
@@ -487,23 +587,67 @@
                 setFieldsLocked(false);
                 restrictLevels(null);
                 document.getElementById('smartAlert').style.display = 'none';
+                existingStudentKey = null;
                 
-                if (payload.email) {
-                    succBox.innerHTML = '✅ تم حفظ وتحديث بيانات التلميذ بنجاح في الشيت<br>📧 وتم إرسال بريد إلكتروني تأكيدي إلى <strong>' + payload.email + '</strong>';
-                } else {
-                    succBox.innerHTML = '✅ تم حفظ وتحديث بيانات التلميذ بنجاح في الجدول!';
-                }
+                succBox.innerHTML = '✅ تم حفظ وتحديث بيانات التلميذ بنجاح في قاعدة البيانات!';
                 succBox.style.display = 'block';
-                
-                setTimeout(() => {
-                    succBox.style.display = 'none';
-                }, 6000);
+
+                setTimeout(() => { succBox.style.display = 'none'; }, 5000);
             })
             .catch(err => {
                 btn.disabled = false;
                 btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> إعادة المحاولة';
-                errBox.innerText = '❌ حدث خطأ في الاتصال: ' + err.message;
+                errBox.innerText = '❌ حدث خطأ: ' + err.message;
                 errBox.style.display = 'block';
+            });
+        }
+
+        // تصدير جميع المشاركين من Firebase إلى ملف Excel حقيقي
+        function exportToExcel() {
+            db.ref("participants").once("value", snapshot => {
+                const data = snapshot.val();
+                if (!data) {
+                    alert("لا توجد أي تسجيلات حالياً لتصديرها.");
+                    return;
+                }
+
+                const rows = [];
+                let counter = 1;
+
+                for (let key in data) {
+                    const item = data[key];
+                    rows.push({
+                        "الرقم": counter++,
+                        "تاريخ ووقت التسجيل": item.updatedAt || "",
+                        "اسم المركز / النادي": item.club || "",
+                        "المدرب المشرف": item.coach || "",
+                        "رقم الهاتف": item.phone || "",
+                        "البريد الإلكتروني": item.email || "",
+                        "المرافق": item.chaperone || "",
+                        "اللقب": item.lastName || "",
+                        "الاسم": item.firstName || "",
+                        "اسم الولي": item.parentName || "",
+                        "تاريخ الميلاد": item.birth || "",
+                        "الولاية": item.wilaya || "",
+                        "المستوى": item.level || "",
+                        "فلاش أنزان": item.flashAnzan || "لا",
+                        "الأكواب السريعة": item.cups || "لا",
+                        "ألعاب الذكاء": item.smartGame || "بدون مشاركة",
+                        "الملاحظات": item.notes || ""
+                    });
+                }
+
+                const worksheet = XLSX.utils.json_to_sheet(rows);
+                const workbook = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(workbook, worksheet, "قائمة المشاركين");
+
+                // ضبط اتجاه الورقة من اليمين لليسار في ملف Excel
+                if(!worksheet['!views']) worksheet['!views'] = [];
+                worksheet['!views'].push({ RTL: true });
+
+                XLSX.writeFile(workbook, "قائمة_المسجلين_موجة_البحر.xlsx");
+            }).catch(err => {
+                alert("حدث خطأ أثناء جلب البيانات: " + err.message);
             });
         }
     </script>
