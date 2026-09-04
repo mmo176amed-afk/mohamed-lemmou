@@ -128,10 +128,6 @@
             display: none; text-align: center; padding: 15px; background: #fef2f2;
             border: 1px solid #fca5a5; border-radius: 8px; margin-top: 15px; color: #991b1b; font-weight: 700;
         }
-        .warning-box {
-            display: none; text-align: center; padding: 15px; background: #fffbeb;
-            border: 1px solid #fcd34d; border-radius: 8px; margin-top: 15px; color: #92400e; font-weight: 700;
-        }
     </style>
 </head>
 <body>
@@ -331,12 +327,11 @@
                 </div>
 
                 <button type="submit" id="submitBtn" class="btn">
-                    <i class="fa-solid fa-paper-plane"></i> تسجيل المشارك وحفظ البيانات
+                    <i class="fa-solid fa-paper-plane"></i> تسجيل المشارك وإرسال البيانات إلى الجدول
                 </button>
             </form>
 
             <div id="successMsg" class="success-box"></div>
-            <div id="warningMsg" class="warning-box"></div>
             <div id="errorMsg" class="error-box"></div>
         </div>
     </div>
@@ -362,7 +357,6 @@
             });
         }
 
-        // دالة حظر تعديل المستوى للأقل
         function restrictLevels(currentLevel) {
             const levelSelect = document.getElementById('level');
             const options = levelSelect.options;
@@ -385,9 +379,9 @@
             if (currentIdx !== -1) {
                 for (let i = 1; i < options.length; i++) {
                     if (i < currentIdx) {
-                        options[i].disabled = true; // تعطيل المستويات الأقل
+                        options[i].disabled = true;
                     } else {
-                        options[i].disabled = false; // تفعيل المستوى الحالي والأعلى
+                        options[i].disabled = false;
                     }
                 }
             }
@@ -419,7 +413,7 @@
             if (club.length < 2) return;
 
             centerTimeout = setTimeout(() => {
-                fetch(`${SCRIPT_URL}?action=searchCenter&club=${encodeURIComponent(club)}`, { redirect: "follow" })
+                fetch(`${SCRIPT_URL}?action=searchCenter&club=${encodeURIComponent(club)}`)
                     .then(res => res.json())
                     .then(res => {
                         if (res && res.found) {
@@ -430,7 +424,7 @@
                         }
                     })
                     .catch(err => console.error(err));
-            }, 400);
+            }, 500);
         }
 
         function triggerStudentSearch() {
@@ -447,7 +441,7 @@
             }
 
             studentTimeout = setTimeout(() => {
-                fetch(`${SCRIPT_URL}?action=searchStudent&lastName=${encodeURIComponent(lastName)}&firstName=${encodeURIComponent(firstName)}`, { redirect: "follow" })
+                fetch(`${SCRIPT_URL}?action=searchStudent&lastName=${encodeURIComponent(lastName)}&firstName=${encodeURIComponent(firstName)}`)
                     .then(res => res.json())
                     .then(res => {
                         if (res && res.found) {
@@ -461,7 +455,6 @@
                             setWilayaValue(res.wilaya);
                             document.getElementById('level').value = res.level || '';
                             
-                            // تطبيق قفل المستويات الأقل
                             restrictLevels(res.level);
 
                             document.getElementById('notes').value = res.notes || '';
@@ -487,7 +480,7 @@
                         }
                     })
                     .catch(err => console.error(err));
-            }, 400);
+            }, 500);
         }
 
         function submitData(e) {
@@ -495,20 +488,19 @@
             const btn = document.getElementById('submitBtn');
             const errBox = document.getElementById('errorMsg');
             const succBox = document.getElementById('successMsg');
-            const warningBox = document.getElementById('warningMsg');
             
             errBox.style.display = 'none';
             succBox.style.display = 'none';
-            warningBox.style.display = 'none';
 
             btn.disabled = true;
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري الحفظ والتحديث...';
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري الإرسال إلى الشيت...';
 
             const selectedRadio = document.querySelector('input[name="smartGame"]:checked');
 
-            const payload = {
+            const params = new URLSearchParams({
+                action: "save",
                 compTitle: document.getElementById('mainCompTitle').innerText,
-                compDate: "19/09/2026", // تاريخ المسابقة يُسجل في العمود R
+                compDate: "19/09/2026",
                 club: document.getElementById('club').value.trim(),
                 coach: document.getElementById('coach').value.trim(),
                 phone: document.getElementById('phone').value.trim(),
@@ -524,52 +516,36 @@
                 cups: document.getElementById('chkCups').checked,
                 smartGame: selectedRadio ? selectedRadio.value : "بدون مشاركة",
                 notes: document.getElementById('notes').value.trim()
-            };
-
-            const params = new URLSearchParams({
-                action: "save",
-                club: payload.club,
-                coach: payload.coach,
-                phone: payload.phone,
-                email: payload.email,
-                chaperone: payload.chaperone,
-                lastName: payload.lastName,
-                firstName: payload.firstName,
-                parentName: payload.parentName,
-                birth: payload.birth,
-                wilaya: payload.wilaya,
-                level: payload.level,
-                flashAnzan: payload.flashAnzan,
-                cups: payload.cups,
-                smartGame: payload.smartGame,
-                notes: payload.notes
             });
 
-            fetch(`${SCRIPT_URL}?${params.toString()}`, {
-                method: "GET",
-                mode: "no-cors"
-            })
-            .then(() => {
-                btn.disabled = false;
-                btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> تسجيل المشارك وحفظ البيانات';
-                document.getElementById('regForm').reset();
-                setFieldsLocked(false);
-                restrictLevels(null);
-                document.getElementById('smartAlert').style.display = 'none';
-                
-                succBox.innerHTML = '✅ تم حفظ وتحديث بيانات التلميذ بنجاح';
-                succBox.style.display = 'block';
-                
-                setTimeout(() => {
-                    succBox.style.display = 'none';
-                }, 6000);
-            })
-            .catch(err => {
-                btn.disabled = false;
-                btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> إعادة المحاولة';
-                errBox.innerText = '❌ حدث خطأ: ' + err.message;
-                errBox.style.display = 'block';
-            });
+            fetch(`${SCRIPT_URL}?${params.toString()}`)
+                .then(res => res.json())
+                .then(res => {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> تسجيل المشارك وإرسال البيانات إلى الجدول';
+                    
+                    if (res && res.success) {
+                        document.getElementById('regForm').reset();
+                        setFieldsLocked(false);
+                        restrictLevels(null);
+                        document.getElementById('smartAlert').style.display = 'none';
+                        
+                        succBox.innerHTML = '✅ تم تسجيل البيانات وإرسالها إلى جدول البيانات بنجاح!';
+                        succBox.style.display = 'block';
+                        
+                        setTimeout(() => {
+                            succBox.style.display = 'none';
+                        }, 5000);
+                    } else {
+                        throw new Error(res.error || "خطأ غير معروف");
+                    }
+                })
+                .catch(err => {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> إعادة المحاولة';
+                    errBox.innerText = '❌ حدث خطأ أثناء الإرسال: ' + err.message;
+                    errBox.style.display = 'block';
+                });
         }
     </script>
 </body>
