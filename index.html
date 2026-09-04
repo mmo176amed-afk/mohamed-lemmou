@@ -342,7 +342,7 @@
     </div>
 
     <script>
-        // 🔴 استبدل الرابط أدناه برابط Web App الخاص بك الذي ينتهي بـ /exec
+        // 🔴 الصق رابط Web App الخاص بك هنا
         const SCRIPT_URL = "ضع_رابط_WEB_APP_الخاص_بك_هنا";
 
         let centerTimeout = null;
@@ -471,16 +471,16 @@
                 notes: document.getElementById('notes').value.trim()
             };
 
-            const formData = new FormData();
-            for (const key in payload) {
-                formData.append(key, payload[key]);
-            }
-
+            // إرسال البيانات بشكل متوافق بنسبة 100% مع Google Apps Script من GitHub
             fetch(SCRIPT_URL, {
                 method: "POST",
-                body: formData
+                mode: "no-cors",
+                headers: {
+                    "Content-Type": "text/plain;charset=utf-8"
+                },
+                body: JSON.stringify(payload)
             })
-            .then(res => {
+            .then(() => {
                 btn.disabled = false;
                 btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> تسجيل المشارك وحفظ البيانات';
                 document.getElementById('regForm').reset();
