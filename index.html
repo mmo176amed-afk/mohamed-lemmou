@@ -128,10 +128,6 @@
             display: none; text-align: center; padding: 15px; background: #fef2f2;
             border: 1px solid #fca5a5; border-radius: 8px; margin-top: 15px; color: #991b1b; font-weight: 700;
         }
-        .warning-box {
-            display: none; text-align: center; padding: 15px; background: #fffbeb;
-            border: 1px solid #fcd34d; border-radius: 8px; margin-top: 15px; color: #92400e; font-weight: 700;
-        }
     </style>
 </head>
 <body>
@@ -331,12 +327,11 @@
                 </div>
 
                 <button type="submit" id="submitBtn" class="btn">
-                    <i class="fa-solid fa-paper-plane"></i> تسجيل المشارك وحفظ البيانات
+                    <i class="fa-solid fa-paper-plane"></i> تسجيل المشارك وإرسال البيانات إلى الجدول
                 </button>
             </form>
 
             <div id="successMsg" class="success-box"></div>
-            <div id="warningMsg" class="warning-box"></div>
             <div id="errorMsg" class="error-box"></div>
         </div>
     </div>
@@ -429,7 +424,7 @@
                         }
                     })
                     .catch(err => console.error(err));
-            }, 400);
+            }, 500);
         }
 
         function triggerStudentSearch() {
@@ -485,7 +480,7 @@
                         }
                     })
                     .catch(err => console.error(err));
-            }, 400);
+            }, 500);
         }
 
         function submitData(e) {
@@ -493,14 +488,12 @@
             const btn = document.getElementById('submitBtn');
             const errBox = document.getElementById('errorMsg');
             const succBox = document.getElementById('successMsg');
-            const warningBox = document.getElementById('warningMsg');
             
             errBox.style.display = 'none';
             succBox.style.display = 'none';
-            warningBox.style.display = 'none';
 
             btn.disabled = true;
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري الحفظ والتحديث...';
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري الإرسال إلى الشيت...';
 
             const selectedRadio = document.querySelector('input[name="smartGame"]:checked');
 
@@ -526,34 +519,29 @@
 
             fetch(SCRIPT_URL, {
                 method: "POST",
-                headers: { "Content-Type": "text/plain;charset=utf-8" },
+                mode: "no-cors",
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(payload)
             })
-            .then(res => res.json())
-            .then(res => {
+            .then(() => {
                 btn.disabled = false;
-                btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> تسجيل المشارك وحفظ البيانات';
+                btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> تسجيل المشارك وإرسال البيانات إلى الجدول';
                 document.getElementById('regForm').reset();
                 setFieldsLocked(false);
                 restrictLevels(null);
                 document.getElementById('smartAlert').style.display = 'none';
                 
-                if (res && res.emailSent) {
-                    succBox.innerHTML = '✅ تم حفظ وتحديث بيانات التلميذ بنجاح<br>📧 وتم إرسال بريد إلكتروني تأكيدي إلى <strong>' + payload.email + '</strong>';
-                    succBox.style.display = 'block';
-                } else {
-                    succBox.innerHTML = '✅ تم حفظ وتحديث بيانات التلميذ بنجاح';
-                    succBox.style.display = 'block';
-                }
+                succBox.innerHTML = '✅ تم تسجيل البيانات وإرسالها إلى جدول البيانات بنجاح!';
+                succBox.style.display = 'block';
                 
                 setTimeout(() => {
                     succBox.style.display = 'none';
-                }, 6000);
+                }, 5000);
             })
             .catch(err => {
                 btn.disabled = false;
                 btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> إعادة المحاولة';
-                errBox.innerText = '❌ حدث خطأ: ' + err.message;
+                errBox.innerText = '❌ حدث خطأ أثناء الإرسال: ' + err.message;
                 errBox.style.display = 'block';
             });
         }
