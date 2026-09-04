@@ -419,14 +419,14 @@
             if (club.length < 2) return;
 
             centerTimeout = setTimeout(() => {
-                fetch(`${SCRIPT_URL}?action=searchCenter&club=${encodeURIComponent(club)}`)
+                fetch(`${SCRIPT_URL}?action=searchCenter&club=${encodeURIComponent(club)}`, { redirect: "follow" })
                     .then(res => res.json())
                     .then(res => {
                         if (res && res.found) {
                             if (res.coach) document.getElementById('coach').value = res.coach;
                             if (res.phone) document.getElementById('phone').value = res.phone;
                             if (res.email) document.getElementById('email').value = res.email;
-                        if (res.wilaya) setWilayaValue(res.wilaya);
+                            if (res.wilaya) setWilayaValue(res.wilaya);
                         }
                     })
                     .catch(err => console.error(err));
@@ -447,7 +447,7 @@
             }
 
             studentTimeout = setTimeout(() => {
-                fetch(`${SCRIPT_URL}?action=searchStudent&lastName=${encodeURIComponent(lastName)}&firstName=${encodeURIComponent(firstName)}`)
+                fetch(`${SCRIPT_URL}?action=searchStudent&lastName=${encodeURIComponent(lastName)}&firstName=${encodeURIComponent(firstName)}`, { redirect: "follow" })
                     .then(res => res.json())
                     .then(res => {
                         if (res && res.found) {
@@ -526,7 +526,6 @@
                 notes: document.getElementById('notes').value.trim()
             };
 
-            const img = new Image();
             const params = new URLSearchParams({
                 action: "save",
                 club: payload.club,
@@ -545,19 +544,32 @@
                 smartGame: payload.smartGame,
                 notes: payload.notes
             });
-            img.src = `${SCRIPT_URL}?${params.toString()}`;
 
-            setTimeout(() => {
+            fetch(`${SCRIPT_URL}?${params.toString()}`, {
+                method: "GET",
+                mode: "no-cors"
+            })
+            .then(() => {
                 btn.disabled = false;
                 btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> تسجيل المشارك وحفظ البيانات';
                 document.getElementById('regForm').reset();
                 setFieldsLocked(false);
                 restrictLevels(null);
                 document.getElementById('smartAlert').style.display = 'none';
+                
                 succBox.innerHTML = '✅ تم حفظ وتحديث بيانات التلميذ بنجاح';
                 succBox.style.display = 'block';
-                setTimeout(() => { succBox.style.display = 'none'; }, 6000);
-            }, 400);
+                
+                setTimeout(() => {
+                    succBox.style.display = 'none';
+                }, 6000);
+            })
+            .catch(err => {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> إعادة المحاولة';
+                errBox.innerText = '❌ حدث خطأ: ' + err.message;
+                errBox.style.display = 'block';
+            });
         }
     </script>
 </body>
