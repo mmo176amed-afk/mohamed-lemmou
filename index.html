@@ -155,7 +155,7 @@
                     
                     <div class="form-group">
                         <label>إسم المركز / النادي *</label>
-                        <input type="text" id="club" placeholder="اكتب اسم المركز..." required>
+                        <input type="text" id="club" placeholder="اكتب اسم المركز..." required oninput="triggerCenterSearch()">
                     </div>
 
                     <div class="form-group">
@@ -180,12 +180,12 @@
 
                     <div class="form-group">
                         <label>لقب المشارك *</label>
-                        <input type="text" id="lastName" placeholder="لقب التلميذ..." required>
+                        <input type="text" id="lastName" placeholder="لقب التلميذ..." required oninput="triggerStudentSearch()">
                     </div>
 
                     <div class="form-group">
                         <label>إسم المشارك *</label>
-                        <input type="text" id="firstName" placeholder="اسم التلميذ..." required>
+                        <input type="text" id="firstName" placeholder="اسم التلميذ..." required oninput="triggerStudentSearch()">
                     </div>
 
                     <div class="form-group">
@@ -345,6 +345,96 @@
         // 🔴 استبدل الرابط أدناه برابط Web App الخاص بك الذي ينتهي بـ /exec
         const SCRIPT_URL = "ضع_رابط_WEB_APP_الخاص_بك_هنا";
 
+        let centerTimeout = null;
+        let studentTimeout = null;
+
+        const lockedFields = ['club', 'coach', 'phone', 'email', 'chaperone', 'parentName', 'birth', 'wilaya'];
+
+        function setFieldsLocked(lock) {
+            lockedFields.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    el.readOnly = lock;
+                    if (el.tagName === 'SELECT') {
+                        el.style.pointerEvents = lock ? 'none' : 'auto';
+                    }
+                    if (lock) el.classList.add('is-locked');
+                    else el.classList.remove('is-locked');
+                }
+            });
+        }
+
+        // دالة حظر تعديل المستوى للأقل
+        function restrictLevels(currentLevel) {
+            const levelSelect = document.getElementById('level');
+            const options = levelSelect.options;
+            
+            if (!currentLevel) {
+                for (let i = 0; i < options.length; i++) {
+                    options[i].disabled = false;
+                }
+                return;
+            }
+
+            let currentIdx = -1;
+            for (let i = 1; i < options.length; i++) {
+                if (options[i].value === currentLevel || options[i].value.includes(currentLevel) || currentLevel.includes(options[i].value)) {
+                    currentIdx = i;
+                    break;
+                }
+            }
+
+            if (currentIdx !== -1) {
+                for (let i = 1; i < options.length; i++) {
+                    if (i < currentIdx) {
+                        options[i].disabled = true; // تعطيل المستويات الأقل
+                    } else {
+                        options[i].disabled = false; // تفعيل المستوى الحالي والأعلى
+                    }
+                }
+            }
+        }
+
+        function setWilayaValue(targetWilaya) {
+            if (!targetWilaya) return;
+            const wilayaSelect = document.getElementById('wilaya');
+            const target = targetWilaya.toString().trim();
+
+            wilayaSelect.value = target;
+
+            if (wilayaSelect.selectedIndex <= 0) {
+                for (let j = 0; j < wilayaSelect.options.length; j++) {
+                    const optText = wilayaSelect.options[j].text.trim();
+                    const optVal = wilayaSelect.options[j].value.trim();
+
+                    if (optText === target || optVal === target || optText.includes(target) || target.includes(optText)) {
+                        wilayaSelect.selectedIndex = j;
+                        break;
+                    }
+                }
+            }
+        }
+
+        function triggerCenterSearch() {
+            clearTimeout(centerTimeout);
+            const club = document.getElementById('club').value.trim();
+            if (club.length < 2) return;
+        }
+
+        function triggerStudentSearch() {
+            clearTimeout(studentTimeout);
+            const lastName = document.getElementById('lastName').value.trim();
+            const firstName = document.getElementById('firstName').value.trim();
+            const alertBox = document.getElementById('smartAlert');
+
+            if (lastName.length < 2 || firstName.length < 2) {
+                alertBox.style.display = 'none';
+                setFieldsLocked(false);
+                restrictLevels(null);
+                return;
+            }
+        }
+
         function submitData(e) {
             e.preventDefault();
             const btn = document.getElementById('submitBtn');
@@ -381,21 +471,25 @@
                 notes: document.getElementById('notes').value.trim()
             };
 
+            const formData = new FormData();
+            for (const key in payload) {
+                formData.append(key, payload[key]);
+            }
+
             fetch(SCRIPT_URL, {
                 method: "POST",
-                mode: "no-cors",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify(payload)
+                body: formData
             })
-            .then(() => {
+            .then(res => {
                 btn.disabled = false;
                 btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> تسجيل المشارك وحفظ البيانات';
                 document.getElementById('regForm').reset();
+                setFieldsLocked(false);
+                restrictLevels(null);
+                document.getElementById('smartAlert').style.display = 'none';
                 
                 if (payload.email) {
-                    succBox.innerHTML = '✅ تم حفظ وتحديث بيانات التلميذ بنجاح<br>📧 وتم إرسال بريد إلكتروني تأكيدي إلى <strong>' + payload.email + '</strong>';
+                    succBox.innerHTML = '✅ تم حفظ وتحديث بيانات التلميذ بنجاح في الشيت<br>📧 وتم إرسال بريد إلكتروني تأكيدي إلى <strong>' + payload.email + '</strong>';
                 } else {
                     succBox.innerHTML = '✅ تم حفظ وتحديث بيانات التلميذ بنجاح في الجدول!';
                 }
