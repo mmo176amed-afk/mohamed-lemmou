@@ -6,13 +6,6 @@
     <title>منصة تسجيل بطولات السوروبان وألعاب الذكاء</title>
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <!-- مكتبات Firebase للاتصال المباشر بقاعدة البيانات -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-    <!-- مكتبة تصدير جداول Excel -->
-    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
-
     <style>
         :root {
             --primary: #0284c7;
@@ -37,16 +30,15 @@
         .header h1 { font-size: 1.5rem; font-weight: 800; margin-bottom: 5px; }
         .header p { font-size: 0.95rem; color: #bae6fd; }
 
-        .container { max-width: 1100px; margin: -20px auto 0; padding: 0 15px; }
+        .container { max-width: 800px; margin: -20px auto 0; padding: 0 15px; }
         .card {
             background: white; border-radius: 16px; padding: 25px;
             box-shadow: 0 10px 25px rgba(0,0,0,0.06); border: 1px solid #e2e8f0;
-            margin-bottom: 25px;
         }
 
         .smart-alert {
-            display: none; background: #fffbeb; border: 1.5px solid #fcd34d; color: #92400e;
-            padding: 14px 16px; border-radius: 8px; margin-bottom: 20px; font-size: 0.92rem; align-items: center; gap: 8px; font-weight: 700;
+            display: none; background: #ecfdf5; border: 1px solid #6ee7b7; color: #065f46;
+            padding: 12px 14px; border-radius: 8px; margin-bottom: 20px; font-size: 0.9rem; align-items: center; gap: 8px;
         }
 
         .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
@@ -128,13 +120,6 @@
         .btn:hover { background: var(--primary-dark); }
         .btn:disabled { background: #94a3b8; cursor: not-allowed; }
 
-        .excel-btn {
-            padding: 10px 18px; background: #166534; color: white; border: none;
-            border-radius: 8px; font-size: 0.95rem; font-weight: 700; cursor: pointer;
-            display: inline-flex; align-items: center; gap: 8px; transition: 0.2s;
-        }
-        .excel-btn:hover { background: #14532d; }
-
         .success-box {
             display: none; text-align: center; padding: 15px; background: #f0fdf4;
             border: 1px solid #86efac; border-radius: 8px; margin-top: 15px; color: #166534; font-weight: 700;
@@ -147,24 +132,6 @@
             display: none; text-align: center; padding: 15px; background: #fffbeb;
             border: 1px solid #fcd34d; border-radius: 8px; margin-top: 15px; color: #92400e; font-weight: 700;
         }
-
-        /* تنسيقات جدول عرض البيانات الحي كشيت إكسيل */
-        .table-header-flex {
-            display: flex; justify-content: space-between; align-items: center;
-            margin-bottom: 15px; flex-wrap: wrap; gap: 10px;
-        }
-        .table-responsive {
-            width: 100%; overflow-x: auto; border: 1px solid #e2e8f0; border-radius: 8px;
-            max-height: 420px; overflow-y: auto;
-        }
-        table { width: 100%; border-collapse: collapse; text-align: right; font-size: 0.88rem; }
-        th { background-color: #0369a1; color: white; padding: 11px 12px; position: sticky; top: 0; z-index: 2; white-space: nowrap; }
-        td { padding: 10px 12px; border-bottom: 1px solid #e2e8f0; white-space: nowrap; }
-        tr:nth-child(even) { background-color: #f8fafc; }
-        tr:hover { background-color: #e0f2fe; }
-        .badge { display: inline-block; padding: 3px 8px; border-radius: 12px; font-size: 0.78rem; font-weight: 700; }
-        .badge-yes { background: #dcfce7; color: #166534; }
-        .badge-no { background: #f1f5f9; color: #64748b; }
     </style>
 </head>
 <body>
@@ -176,13 +143,11 @@
     </header>
 
     <div class="container">
-        
-        <!-- بطاقة استمارة التسجيل الكاملة -->
         <div class="card">
             
             <div id="smartAlert" class="smart-alert">
-                <i class="fa-solid fa-triangle-exclamation"></i>
-                <span id="alertText">تنبيه: هذا التلميذ مسجل مسبقاً! تم قفل البيانات الأساسية، ويمكنك فقط ترقية المستوى، ألعاب الذكاء، والملاحظات.</span>
+                <i class="fa-solid fa-lock"></i>
+                <span id="alertText">تم استرجاع بيانات المشارك! تم قفل البيانات الشخصية، ويمكنك فقط ترقية المستوى، ألعاب الذكاء، والملاحظات.</span>
             </div>
 
             <form id="regForm" onsubmit="submitData(event)">
@@ -374,68 +339,12 @@
             <div id="warningMsg" class="warning-box"></div>
             <div id="errorMsg" class="error-box"></div>
         </div>
-
-        <!-- بطاقة جدول التسجيلات الشبيه بالإكسيل والمباشر -->
-        <div class="card">
-            <div class="table-header-flex">
-                <h2 style="font-size: 1.2rem; color: #0369a1; font-weight: 800;">
-                    <i class="fa-solid fa-table-list"></i> جدول المشاركين المسجلين (<span id="totalCount">0</span>)
-                </h2>
-                <button type="button" onclick="exportToExcel()" class="excel-btn">
-                    <i class="fa-solid fa-file-excel"></i> تحميل الجدول كملف Excel (.xlsx)
-                </button>
-            </div>
-
-            <div class="table-responsive">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>#</th>
-                            <th>اللقب</th>
-                            <th>الاسم</th>
-                            <th>المستوى</th>
-                            <th>المركز / النادي</th>
-                            <th>المدرب</th>
-                            <th>الهاتف</th>
-                            <th>الولاية</th>
-                            <th>ألعاب الذكاء</th>
-                            <th>فلاش أنزان</th>
-                            <th>الأكواب</th>
-                            <th>تاريخ التسجيل</th>
-                        </tr>
-                    </thead>
-                    <tbody id="participantsTableBody">
-                        <tr>
-                            <td colspan="12" style="text-align: center; color: #64748b; padding: 20px;">
-                                <i class="fa-solid fa-spinner fa-spin"></i> جاري تحميل بيانات الجدول...
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
     </div>
 
     <script>
-        // إعدادات Firebase الخاصة بمشروعك
-        const firebaseConfig = {
-            apiKey: "AIzaSyCLQrpHzugUlCAH8scFRJyfMxiYC6PytDw",
-            authDomain: "soroban-app-4e40f.firebaseapp.com",
-            databaseURL: "https://soroban-app-4e40f-default-rtdb.firebaseio.com",
-            projectId: "soroban-app-4e40f",
-            storageBucket: "soroban-app-4e40f.firebasestorage.app",
-            messagingSenderId: "1087784930796",
-            appId: "1:1087784930796:web:e4282ab1a205be4db604c9"
-        };
-
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.database();
-
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxiPf8zuUEjx7AxTTYYkxq8vB7Xz_dN3l8u9xUIqU4HRc1kPsXEK4k0U0WtDgPlwl8NAw/exec";
         let centerTimeout = null;
         let studentTimeout = null;
-        let existingStudentKey = null;
-        let cachedParticipants = {};
 
         const lockedFields = ['club', 'coach', 'phone', 'email', 'chaperone', 'parentName', 'birth', 'wilaya'];
 
@@ -476,9 +385,9 @@
             if (currentIdx !== -1) {
                 for (let i = 1; i < options.length; i++) {
                     if (i < currentIdx) {
-                        options[i].disabled = true;
+                        options[i].disabled = true; // تعطيل المستويات الأقل
                     } else {
-                        options[i].disabled = false;
+                        options[i].disabled = false; // تفعيل المستوى الحالي والأعلى
                     }
                 }
             }
@@ -504,70 +413,26 @@
             }
         }
 
-        // استماع حي وفوري لبيانات Firebase لتحديث الجدول المباشر
-        db.ref("participants").on("value", snapshot => {
-            const data = snapshot.val() || {};
-            cachedParticipants = data;
-            renderLiveTable(data);
-        });
-
-        // رسم جدول المشاركين المباشر
-        function renderLiveTable(data) {
-            const tbody = document.getElementById('participantsTableBody');
-            const totalCountSpan = document.getElementById('totalCount');
-            tbody.innerHTML = '';
-            
-            const keys = Object.keys(data);
-            totalCountSpan.innerText = keys.length;
-
-            if (keys.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="12" style="text-align: center; color: #64748b; padding: 20px;">لا توجد أي تسجيلات حتى الآن.</td></tr>';
-                return;
-            }
-
-            let index = 1;
-            keys.reverse().forEach(key => {
-                const item = data[key];
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td><strong>${index++}</strong></td>
-                    <td><strong>${item.lastName || ''}</strong></td>
-                    <td><strong>${item.firstName || ''}</strong></td>
-                    <td>${item.level || ''}</td>
-                    <td>${item.club || ''}</td>
-                    <td>${item.coach || ''}</td>
-                    <td dir="ltr" style="text-align: right;">${item.phone || ''}</td>
-                    <td>${item.wilaya || ''}</td>
-                    <td>${item.smartGame || 'بدون'}</td>
-                    <td><span class="badge ${item.flashAnzan === 'نعم' || item.flashAnzan === true ? 'badge-yes' : 'badge-no'}">${item.flashAnzan === true || item.flashAnzan === 'نعم' ? 'نعم' : 'لا'}</span></td>
-                    <td><span class="badge ${item.cups === 'نعم' || item.cups === true ? 'badge-yes' : 'badge-no'}">${item.cups === true || item.cups === 'نعم' ? 'نعم' : 'لا'}</span></td>
-                    <td style="color: #64748b; font-size: 0.8rem;">${item.updatedAt || ''}</td>
-                `;
-                tbody.appendChild(tr);
-            });
-        }
-
-        // البحث التلقائي عن بيانات المركز
         function triggerCenterSearch() {
             clearTimeout(centerTimeout);
             const club = document.getElementById('club').value.trim();
             if (club.length < 2) return;
 
             centerTimeout = setTimeout(() => {
-                for (let key in cachedParticipants) {
-                    const item = cachedParticipants[key];
-                    if (item.club && item.club.trim().toLowerCase() === club.toLowerCase()) {
-                        if (item.coach) document.getElementById('coach').value = item.coach;
-                        if (item.phone) document.getElementById('phone').value = item.phone;
-                        if (item.email) document.getElementById('email').value = item.email;
-                        if (item.wilaya) setWilayaValue(item.wilaya);
-                        break;
-                    }
-                }
-            }, 300);
+                fetch(`${SCRIPT_URL}?action=searchCenter&club=${encodeURIComponent(club)}`)
+                    .then(res => res.json())
+                    .then(res => {
+                        if (res && res.found) {
+                            if (res.coach) document.getElementById('coach').value = res.coach;
+                            if (res.phone) document.getElementById('phone').value = res.phone;
+                            if (res.email) document.getElementById('email').value = res.email;
+                            if (res.wilaya) setWilayaValue(res.wilaya);
+                        }
+                    })
+                    .catch(err => console.error(err));
+            }, 400);
         }
 
-        // البحث التلقائي عن التلميذ، قفل الحقول ومنع التكرار
         function triggerStudentSearch() {
             clearTimeout(studentTimeout);
             const lastName = document.getElementById('lastName').value.trim();
@@ -578,62 +443,53 @@
                 alertBox.style.display = 'none';
                 setFieldsLocked(false);
                 restrictLevels(null);
-                existingStudentKey = null;
                 return;
             }
 
             studentTimeout = setTimeout(() => {
-                let found = false;
-                for (let key in cachedParticipants) {
-                    const p = cachedParticipants[key];
-                    if (p.lastName && p.firstName && 
-                        p.lastName.trim().toLowerCase() === lastName.toLowerCase() && 
-                        p.firstName.trim().toLowerCase() === firstName.toLowerCase()) {
-                        
-                        found = true;
-                        existingStudentKey = key;
-                        document.getElementById('club').value = p.club || '';
-                        document.getElementById('coach').value = p.coach || '';
-                        document.getElementById('phone').value = p.phone || '';
-                        document.getElementById('email').value = p.email || '';
-                        document.getElementById('chaperone').value = p.chaperone || '';
-                        document.getElementById('parentName').value = p.parentName || '';
-                        document.getElementById('birth').value = p.birth || '';
-                        setWilayaValue(p.wilaya);
-                        document.getElementById('level').value = p.level || '';
-                        
-                        restrictLevels(p.level);
+                fetch(`${SCRIPT_URL}?action=searchStudent&lastName=${encodeURIComponent(lastName)}&firstName=${encodeURIComponent(firstName)}`)
+                    .then(res => res.json())
+                    .then(res => {
+                        if (res && res.found) {
+                            document.getElementById('club').value = res.club || '';
+                            document.getElementById('coach').value = res.coach || '';
+                            document.getElementById('phone').value = res.phone || '';
+                            document.getElementById('email').value = res.email || '';
+                            document.getElementById('chaperone').value = res.chaperone || '';
+                            document.getElementById('parentName').value = res.parentName || '';
+                            document.getElementById('birth').value = res.birth || '';
+                            setWilayaValue(res.wilaya);
+                            document.getElementById('level').value = res.level || '';
+                            
+                            // تطبيق قفل المستويات الأقل
+                            restrictLevels(res.level);
 
-                        document.getElementById('notes').value = p.notes || '';
-                        document.getElementById('chkFlash').checked = (p.flashAnzan === "نعم" || p.flashAnzan === true);
-                        document.getElementById('chkCups').checked = (p.cups === "نعم" || p.cups === true);
+                            document.getElementById('notes').value = res.notes || '';
+                            document.getElementById('chkFlash').checked = !!res.flashAnzan;
+                            document.getElementById('chkCups').checked = !!res.cups;
 
-                        const radios = document.querySelectorAll('input[name="smartGame"]');
-                        let matched = false;
-                        radios.forEach(rb => {
-                            if (rb.value === p.smartGame) {
-                                rb.checked = true;
-                                matched = true;
-                            }
-                        });
-                        if (!matched) radios[radios.length - 1].checked = true;
+                            const radios = document.querySelectorAll('input[name="smartGame"]');
+                            let matched = false;
+                            radios.forEach(rb => {
+                                if (rb.value === res.smartGame) {
+                                    rb.checked = true;
+                                    matched = true;
+                                }
+                            });
+                            if (!matched) radios[radios.length - 1].checked = true;
 
-                        setFieldsLocked(true);
-                        alertBox.style.display = 'flex';
-                        break;
-                    }
-                }
-
-                if (!found) {
-                    setFieldsLocked(false);
-                    restrictLevels(null);
-                    alertBox.style.display = 'none';
-                    existingStudentKey = null;
-                }
-            }, 300);
+                            setFieldsLocked(true);
+                            alertBox.style.display = 'flex';
+                        } else {
+                            setFieldsLocked(false);
+                            restrictLevels(null);
+                            alertBox.style.display = 'none';
+                        }
+                    })
+                    .catch(err => console.error(err));
+            }, 400);
         }
 
-        // إرسال وحفظ البيانات
         function submitData(e) {
             e.preventDefault();
             const btn = document.getElementById('submitBtn');
@@ -645,14 +501,6 @@
             succBox.style.display = 'none';
             warningBox.style.display = 'none';
 
-            // تنبيه صريح في حال كان التلميذ مسجلاً مسبقاً لمنع التكرار الأعمى
-            if (existingStudentKey) {
-                const confirmUpdate = confirm("⚠️ هذا التلميذ (" + document.getElementById('lastName').value + " " + document.getElementById('firstName').value + ") مسجل مسبقاً في قائمة المشاركين!\n\nهل أنت متأكد من رغبتك في تحديث بياناته (ترقية المستوى / ألعاب الذكاء)؟");
-                if (!confirmUpdate) {
-                    return;
-                }
-            }
-
             btn.disabled = true;
             btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري الحفظ والتحديث...';
 
@@ -660,45 +508,46 @@
 
             const payload = {
                 compTitle: document.getElementById('mainCompTitle').innerText,
-                compDate: "19/09/2026",
+                compDate: "19/09/2026", // تاريخ المسابقة يُسجل في العمود R
                 club: document.getElementById('club').value.trim(),
                 coach: document.getElementById('coach').value.trim(),
                 phone: document.getElementById('phone').value.trim(),
                 email: document.getElementById('email').value.trim(),
-                chaperone: document.getElementById('chaperone').value.trim() || "لا يوجد",
+                chaperone: document.getElementById('chaperone').value.trim(),
                 lastName: document.getElementById('lastName').value.trim(),
                 firstName: document.getElementById('firstName').value.trim(),
-                parentName: document.getElementById('parentName').value.trim() || "غير محدد",
+                parentName: document.getElementById('parentName').value.trim(),
                 birth: document.getElementById('birth').value,
                 wilaya: document.getElementById('wilaya').value,
                 level: document.getElementById('level').value,
-                flashAnzan: document.getElementById('chkFlash').checked ? "نعم" : "لا",
-                cups: document.getElementById('chkCups').checked ? "نعم" : "لا",
+                flashAnzan: document.getElementById('chkFlash').checked,
+                cups: document.getElementById('chkCups').checked,
                 smartGame: selectedRadio ? selectedRadio.value : "بدون مشاركة",
-                notes: document.getElementById('notes').value.trim() || "لا توجد",
-                updatedAt: new Date().toLocaleString("ar-DZ")
+                notes: document.getElementById('notes').value.trim()
             };
 
-            const targetRef = existingStudentKey ? db.ref("participants/" + existingStudentKey) : db.ref("participants").push();
-
-            targetRef.set(payload)
-            .then(() => {
+            fetch(SCRIPT_URL, {
+                method: "POST",
+                headers: { "Content-Type": "text/plain;charset=utf-8" },
+                body: JSON.stringify(payload)
+            })
+            .then(res => res.json())
+            .then(res => {
                 btn.disabled = false;
                 btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> تسجيل المشارك وحفظ البيانات';
-                
-                if (existingStudentKey) {
-                    succBox.innerHTML = '✅ تم تحديث بيانات التلميذ <strong>' + payload.firstName + ' ' + payload.lastName + '</strong> بنجاح في الجدول!';
-                } else {
-                    succBox.innerHTML = '✅ تم تسجيل المشارك الجديد <strong>' + payload.firstName + ' ' + payload.lastName + '</strong> وإضافته إلى الجدول بنجاح!';
-                }
-                succBox.style.display = 'block';
-
                 document.getElementById('regForm').reset();
                 setFieldsLocked(false);
                 restrictLevels(null);
                 document.getElementById('smartAlert').style.display = 'none';
-                existingStudentKey = null;
-
+                
+                if (res && res.emailSent) {
+                    succBox.innerHTML = '✅ تم حفظ وتحديث بيانات التلميذ بنجاح<br>📧 وتم إرسال بريد إلكتروني تأكيدي إلى <strong>' + payload.email + '</strong>';
+                    succBox.style.display = 'block';
+                } else {
+                    succBox.innerHTML = '✅ تم حفظ وتحديث بيانات التلميذ بنجاح';
+                    succBox.style.display = 'block';
+                }
+                
                 setTimeout(() => {
                     succBox.style.display = 'none';
                 }, 6000);
@@ -709,50 +558,6 @@
                 errBox.innerText = '❌ حدث خطأ: ' + err.message;
                 errBox.style.display = 'block';
             });
-        }
-
-        // تصدير جدول المشاركين كملف إكسيل فوري (.xlsx)
-        function exportToExcel() {
-            const keys = Object.keys(cachedParticipants);
-            if (keys.length === 0) {
-                alert("لا توجد أي تسجيلات في الجدول حالياً لتصديرها.");
-                return;
-            }
-
-            const rows = [];
-            let counter = 1;
-
-            keys.forEach(key => {
-                const item = cachedParticipants[key];
-                rows.push({
-                    "الرقم": counter++,
-                    "تاريخ ووقت التسجيل": item.updatedAt || "",
-                    "اسم المركز / النادي": item.club || "",
-                    "المدرب المشرف": item.coach || "",
-                    "رقم الهاتف": item.phone || "",
-                    "البريد الإلكتروني": item.email || "",
-                    "المرافق": item.chaperone || "",
-                    "اللقب": item.lastName || "",
-                    "الاسم": item.firstName || "",
-                    "اسم الولي": item.parentName || "",
-                    "تاريخ الميلاد": item.birth || "",
-                    "الولاية": item.wilaya || "",
-                    "المستوى": item.level || "",
-                    "فلاش أنزان": item.flashAnzan || "لا",
-                    "الأكواب السريعة": item.cups || "لا",
-                    "ألعاب الذكاء": item.smartGame || "بدون مشاركة",
-                    "الملاحظات": item.notes || ""
-                });
-            });
-
-            const worksheet = XLSX.utils.json_to_sheet(rows);
-            const workbook = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(workbook, worksheet, "قائمة المشاركين");
-
-            if (!worksheet['!views']) worksheet['!views'] = [];
-            worksheet['!views'].push({ RTL: true });
-
-            XLSX.writeFile(workbook, "قائمة_المسجلين_موجة_البحر.xlsx");
         }
     </script>
 </body>
