@@ -47,8 +47,9 @@
         
         label { font-size: 0.88rem; font-weight: 700; color: #475569; }
         .optional-tag { font-size: 0.78rem; font-weight: normal; color: #64748b; }
+        .price-badge { color: #d97706; font-weight: 800; font-size: 0.84rem; margin-right: 3px; }
 
-        input[type="text"], input[type="date"], input[type="tel"], input[type="email"], select, textarea {
+        input[type="text"], input[type="tel"], input[type="email"], select, textarea {
             padding: 11px 13px; border-radius: 8px; border: 1.5px solid var(--border);
             font-size: 0.95rem; outline: none; background: #f8fafc;
         }
@@ -128,6 +129,20 @@
             display: none; text-align: center; padding: 15px; background: #fef2f2;
             border: 1px solid #fca5a5; border-radius: 8px; margin-top: 15px; color: #991b1b; font-weight: 700;
         }
+        .warning-box {
+            display: none; text-align: center; padding: 15px; background: #fffbeb;
+            border: 1px solid #fcd34d; border-radius: 8px; margin-top: 15px; color: #92400e; font-weight: 700;
+        }
+
+        .footer-credit {
+            margin-top: 25px;
+            text-align: center;
+            font-size: 0.9rem;
+            color: #64748b;
+            font-weight: 700;
+            padding-top: 15px;
+            border-top: 1px dashed #cbd5e1;
+        }
     </style>
 </head>
 <body>
@@ -149,14 +164,33 @@
             <form id="regForm" onsubmit="submitData(event)">
                 <div class="form-grid">
                     
+                    <div class="form-group full-width">
+                        <div class="section-box" style="border-right: 4px solid var(--primary);">
+                            <div class="section-box-title"><i class="fa-solid fa-location-dot"></i> نوع المشاركة في المسابقة:</div>
+                            <div class="radio-group">
+                                <label class="option-item">
+                                    <input type="radio" name="attendanceType" value="حضوري" checked>
+                                    <span>المسابقة حضورياً <span class="price-badge">(2500 دج)</span></span>
+                                </label>
+                                <label class="option-item">
+                                    <input type="radio" name="attendanceType" value="أون لاين">
+                                    <span>المسابقة أون لاين <span class="price-badge">(العرب 15 دولار / الجزائريين 1500 دج)</span></span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="form-group">
                         <label>إسم المركز / النادي *</label>
                         <input type="text" id="club" placeholder="اكتب اسم المركز..." required oninput="triggerCenterSearch()">
                     </div>
 
-                    <div class="form-group">
+                    <div class="form-group" id="coachContainer">
                         <label>إسم المدرب المشرف *</label>
                         <input type="text" id="coach" placeholder="اسم المدرب..." required>
+                        <select id="coachSelect" style="display: none;" onchange="onCoachSelectChanged()">
+                            <option value="">-- اختر المدرب --</option>
+                        </select>
                     </div>
 
                     <div class="form-group">
@@ -170,7 +204,7 @@
                     </div>
 
                     <div class="form-group">
-                        <label>إسم المرافق <span class="optional-tag">(اختياري)</span></label>
+                        <label>إسم المرافق <span class="optional-tag">(اختياري - 500 دج)</span></label>
                         <input type="text" id="chaperone" placeholder="اسم المرافق إن وجد...">
                     </div>
 
@@ -191,7 +225,7 @@
 
                     <div class="form-group">
                         <label>تاريخ الميلاد *</label>
-                        <input type="date" id="birth" required>
+                        <input type="text" id="birth" placeholder="JJ/MM/AAAA" maxlength="10" required oninput="formatBirthDate(this)" onblur="autoCompleteDate(this)">
                     </div>
 
                     <div class="form-group">
@@ -276,7 +310,7 @@
                             <div class="section-box-title"><i class="fa-solid fa-bolt"></i> مسابقات السرعة الإضافية:</div>
                             <div class="checkbox-group">
                                 <label class="option-item">
-                                    <input type="checkbox" id="chkFlash"> فلاش أنزان
+                                    <input type="checkbox" id="chkFlash"> فلاش أنزان <span class="price-badge">(500 دج)</span>
                                 </label>
                                 <label class="option-item">
                                     <input type="checkbox" id="chkCups"> الأكواب السريعة
@@ -287,7 +321,7 @@
 
                     <div class="form-group full-width">
                         <div class="section-box">
-                            <div class="section-box-title"><i class="fa-solid fa-cubes"></i> مسابقة ألعاب الذكاء (اختر صنفاً واحداً):</div>
+                            <div class="section-box-title"><i class="fa-solid fa-cubes"></i> مسابقة ألعاب الذكاء (اختر صنفاً واحداً - <span class="price-badge">500 دج</span>):</div>
                             <div class="radio-group">
                                 <label class="option-item">
                                     <input type="radio" name="smartGame" value="مكعب 3×3"> مكعب 3×3
@@ -327,21 +361,90 @@
                 </div>
 
                 <button type="submit" id="submitBtn" class="btn">
-                    <i class="fa-solid fa-paper-plane"></i> تسجيل المشارك وإرسال البيانات إلى الجدول
+                    <i class="fa-solid fa-paper-plane"></i> تسجيل المشارك وحفظ البيانات
                 </button>
             </form>
 
             <div id="successMsg" class="success-box"></div>
+            <div id="warningMsg" class="warning-box"></div>
             <div id="errorMsg" class="error-box"></div>
+
+            <div class="footer-credit">
+                من إعداد المدرب لمو محمد
+            </div>
         </div>
     </div>
 
     <script>
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx0G945UT9JN_0qFYvwJYN4eXiOHUlBlRt1iB5Ru3A4UJYPx0efuQLsAXl7Un5SFaNIwg/exec";
+        // ضع هنا رابط تطبيق الويب بعد نشره من Google Apps Script
+        const SCRIPT_WEB_APP_URL = "https://script.google.com/macros/s/AKfycby.../exec";
+
         let centerTimeout = null;
         let studentTimeout = null;
+        let currentCoachesList = [];
 
         const lockedFields = ['club', 'coach', 'phone', 'email', 'chaperone', 'parentName', 'birth', 'wilaya'];
+
+        // تنسيق التاريخ أثناء الكتابة مع السماح بكتابة السلاش يدوياً
+        function formatBirthDate(input) {
+            let val = input.value;
+            val = val.replace(/[^\d\/]/g, '');
+            
+            if (!val.includes('/')) {
+                if (val.length > 2 && val.length <= 4) {
+                    val = val.substring(0, 2) + '/' + val.substring(2);
+                } else if (val.length > 4) {
+                    val = val.substring(0, 2) + '/' + val.substring(2, 4) + '/' + val.substring(4, 8);
+                }
+            } else {
+                let parts = val.split('/');
+                if (parts[0] && parts[0].length > 2) parts[0] = parts[0].substring(0, 2);
+                if (parts[1] && parts[1].length > 2) parts[1] = parts[1].substring(0, 2);
+                if (parts[2] && parts[2].length > 4) parts[2] = parts[2].substring(0, 4);
+                val = parts.join('/');
+            }
+            input.value = val;
+        }
+
+        // دالة التحقق الدقيق من اكتمال وصحة صيغة التاريخ dd/MM/yyyy
+        function isValidDatePattern(dateStr) {
+            if (!dateStr) return false;
+            dateStr = dateStr.trim();
+            const regex = /^(\d{2})\/(\d{2})\/(\d{4})$/;
+            const match = dateStr.match(regex);
+            if (!match) return false;
+
+            const day = parseInt(match[1], 10);
+            const month = parseInt(match[2], 10);
+            const year = parseInt(match[3], 10);
+
+            if (month < 1 || month > 12) return false;
+            if (day < 1 || day > 31) return false;
+            if (year < 1990 || year > 2030) return false;
+
+            return true;
+        }
+
+        // إكمال الصفر والسنة تلقائياً عند ترك الحقل
+        function autoCompleteDate(input) {
+            let val = input.value.trim();
+            if (!val) return;
+
+            let parts = val.split('/');
+            if (parts.length === 3) {
+                let day = parts[0].trim();
+                let month = parts[1].trim();
+                let year = parts[2].trim();
+
+                if (day.length === 1) day = '0' + day;
+                if (month.length === 1) month = '0' + month;
+                if (year.length === 2) year = '20' + year;
+
+                if (day && month && year) {
+                    input.value = day + '/' + month + '/' + year;
+                }
+            }
+        }
 
         function setFieldsLocked(lock) {
             lockedFields.forEach(id => {
@@ -355,8 +458,15 @@
                     else el.classList.remove('is-locked');
                 }
             });
+            const cSelect = document.getElementById('coachSelect');
+            if (cSelect) {
+                cSelect.style.pointerEvents = lock ? 'none' : 'auto';
+                if (lock) cSelect.classList.add('is-locked');
+                else cSelect.classList.remove('is-locked');
+            }
         }
 
+        // دالة حظر تعديل المستوى للأقل والسماح بالأعلى فقط
         function restrictLevels(currentLevel) {
             const levelSelect = document.getElementById('level');
             const options = levelSelect.options;
@@ -407,24 +517,65 @@
             }
         }
 
+        // البحث التلقائي عن المركز وعرض المدربين كخيارات
         function triggerCenterSearch() {
             clearTimeout(centerTimeout);
             const club = document.getElementById('club').value.trim();
-            if (club.length < 2) return;
+            const coachInput = document.getElementById('coach');
+            const coachSelect = document.getElementById('coachSelect');
+
+            if (club.length < 2) {
+                coachSelect.style.display = 'none';
+                coachInput.style.display = 'block';
+                return;
+            }
 
             centerTimeout = setTimeout(() => {
-                fetch(`${SCRIPT_URL}?action=searchCenter&club=${encodeURIComponent(club)}`)
-                    .then(res => res.json())
+                fetch(`${SCRIPT_WEB_APP_URL}?action=searchCenter&club=${encodeURIComponent(club)}`)
+                    .then(r => r.json())
                     .then(res => {
-                        if (res && res.found) {
-                            if (res.coach) document.getElementById('coach').value = res.coach;
-                            if (res.phone) document.getElementById('phone').value = res.phone;
-                            if (res.email) document.getElementById('email').value = res.email;
-                            if (res.wilaya) setWilayaValue(res.wilaya);
+                        if (res && res.found && res.coaches && res.coaches.length > 0) {
+                            currentCoachesList = res.coaches;
+
+                            if (currentCoachesList.length === 1) {
+                                coachSelect.style.display = 'none';
+                                coachInput.style.display = 'block';
+                                coachInput.value = currentCoachesList[0].coach || '';
+                                if (currentCoachesList[0].phone) document.getElementById('phone').value = currentCoachesList[0].phone;
+                                if (currentCoachesList[0].email) document.getElementById('email').value = currentCoachesList[0].email;
+                                if (currentCoachesList[0].wilaya) setWilayaValue(currentCoachesList[0].wilaya);
+                            } else {
+                                coachInput.style.display = 'none';
+                                coachSelect.innerHTML = '<option value="">-- اختر المدرب المشرف --</option>';
+                                currentCoachesList.forEach((cItem, idx) => {
+                                    const opt = document.createElement('option');
+                                    opt.value = idx;
+                                    opt.textContent = cItem.coach;
+                                    coachSelect.appendChild(opt);
+                                });
+                                coachSelect.style.display = 'block';
+                            }
+                        } else {
+                            currentCoachesList = [];
+                            coachSelect.style.display = 'none';
+                            coachInput.style.display = 'block';
                         }
                     })
-                    .catch(err => console.error(err));
-            }, 500);
+                    .catch(err => console.error("Error searchCenter:", err));
+            }, 400);
+        }
+
+        // عند اختيار مدرب من القائمة المنسدلة
+        function onCoachSelectChanged() {
+            const coachSelect = document.getElementById('coachSelect');
+            const idx = coachSelect.value;
+            if (idx !== "" && currentCoachesList[idx]) {
+                const selCoach = currentCoachesList[idx];
+                document.getElementById('coach').value = selCoach.coach || '';
+                if (selCoach.phone) document.getElementById('phone').value = selCoach.phone;
+                if (selCoach.email) document.getElementById('email').value = selCoach.email;
+                if (selCoach.wilaya) setWilayaValue(selCoach.wilaya);
+            }
         }
 
         function triggerStudentSearch() {
@@ -441,17 +592,36 @@
             }
 
             studentTimeout = setTimeout(() => {
-                fetch(`${SCRIPT_URL}?action=searchStudent&lastName=${encodeURIComponent(lastName)}&firstName=${encodeURIComponent(firstName)}`)
-                    .then(res => res.json())
+                fetch(`${SCRIPT_WEB_APP_URL}?action=searchStudent&lastName=${encodeURIComponent(lastName)}&firstName=${encodeURIComponent(firstName)}`)
+                    .then(r => r.json())
                     .then(res => {
                         if (res && res.found) {
                             document.getElementById('club').value = res.club || '';
-                            document.getElementById('coach').value = res.coach || '';
+                            
+                            const coachInput = document.getElementById('coach');
+                            const coachSelect = document.getElementById('coachSelect');
+                            coachSelect.style.display = 'none';
+                            coachInput.style.display = 'block';
+                            coachInput.value = res.coach || '';
+
                             document.getElementById('phone').value = res.phone || '';
                             document.getElementById('email').value = res.email || '';
                             document.getElementById('chaperone').value = res.chaperone || '';
                             document.getElementById('parentName').value = res.parentName || '';
-                            document.getElementById('birth').value = res.birth || '';
+                            
+                            if (res.birth) {
+                                let bVal = res.birth.toString();
+                                if (bVal.includes('-')) {
+                                    let bParts = bVal.split('-');
+                                    if (bParts.length === 3) {
+                                        bVal = bParts[2] + '/' + bParts[1] + '/' + bParts[0];
+                                    }
+                                }
+                                document.getElementById('birth').value = bVal;
+                            } else {
+                                document.getElementById('birth').value = '';
+                            }
+
                             setWilayaValue(res.wilaya);
                             document.getElementById('level').value = res.level || '';
                             
@@ -471,6 +641,15 @@
                             });
                             if (!matched) radios[radios.length - 1].checked = true;
 
+                            if (res.attendanceType) {
+                                const attRadios = document.querySelectorAll('input[name="attendanceType"]');
+                                attRadios.forEach(arb => {
+                                    if (arb.value === res.attendanceType || res.attendanceType.includes(arb.value)) {
+                                        arb.checked = true;
+                                    }
+                                });
+                            }
+
                             setFieldsLocked(true);
                             alertBox.style.display = 'flex';
                         } else {
@@ -479,73 +658,115 @@
                             alertBox.style.display = 'none';
                         }
                     })
-                    .catch(err => console.error(err));
-            }, 500);
+                    .catch(err => console.error("Error searchStudent:", err));
+            }, 400);
         }
 
         function submitData(e) {
             e.preventDefault();
-            const btn = document.getElementById('submitBtn');
+            
+            const birthInput = document.getElementById('birth');
+            autoCompleteDate(birthInput);
+
             const errBox = document.getElementById('errorMsg');
             const succBox = document.getElementById('successMsg');
+            const warningBox = document.getElementById('warningMsg');
             
             errBox.style.display = 'none';
             succBox.style.display = 'none';
+            warningBox.style.display = 'none';
 
+            const birthVal = birthInput.value.trim();
+            if (!isValidDatePattern(birthVal)) {
+                errBox.innerHTML = '⚠️ <strong>يرجى تصحيح تاريخ الميلاد:</strong> التاريخ مكتوب بشكل خاطئ أو غير مكتمل.<br>يجب أن يكون بالصيغة <strong>dd/MM/yyyy</strong> (مثال: <strong>05/09/2015</strong>) بدون أي خانات ناقصة أو مسافات فارغة.';
+                errBox.style.display = 'block';
+                birthInput.focus();
+                return;
+            }
+
+            const btn = document.getElementById('submitBtn');
             btn.disabled = true;
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري الإرسال إلى الشيت...';
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري الحفظ والتحديث...';
 
             const selectedRadio = document.querySelector('input[name="smartGame"]:checked');
+            const selectedAttendance = document.querySelector('input[name="attendanceType"]:checked');
 
-            const params = new URLSearchParams({
-                action: "save",
+            let activeCoach = document.getElementById('coach').value.trim();
+            const coachSelect = document.getElementById('coachSelect');
+            if (coachSelect.style.display !== 'none' && coachSelect.selectedIndex > 0) {
+                activeCoach = coachSelect.options[coachSelect.selectedIndex].text;
+            }
+
+            const payload = {
                 compTitle: document.getElementById('mainCompTitle').innerText,
                 compDate: "19/09/2026",
+                attendanceType: selectedAttendance ? selectedAttendance.value : "حضوري",
                 club: document.getElementById('club').value.trim(),
-                coach: document.getElementById('coach').value.trim(),
+                coach: activeCoach,
                 phone: document.getElementById('phone').value.trim(),
                 email: document.getElementById('email').value.trim(),
                 chaperone: document.getElementById('chaperone').value.trim(),
                 lastName: document.getElementById('lastName').value.trim(),
                 firstName: document.getElementById('firstName').value.trim(),
                 parentName: document.getElementById('parentName').value.trim(),
-                birth: document.getElementById('birth').value,
+                birth: birthVal,
                 wilaya: document.getElementById('wilaya').value,
                 level: document.getElementById('level').value,
                 flashAnzan: document.getElementById('chkFlash').checked,
                 cups: document.getElementById('chkCups').checked,
                 smartGame: selectedRadio ? selectedRadio.value : "بدون مشاركة",
                 notes: document.getElementById('notes').value.trim()
-            });
+            };
 
-            fetch(`${SCRIPT_URL}?${params.toString()}`)
-                .then(res => res.json())
-                .then(res => {
-                    btn.disabled = false;
-                    btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> تسجيل المشارك وإرسال البيانات إلى الجدول';
-                    
-                    if (res && res.success) {
-                        document.getElementById('regForm').reset();
-                        setFieldsLocked(false);
-                        restrictLevels(null);
-                        document.getElementById('smartAlert').style.display = 'none';
-                        
-                        succBox.innerHTML = '✅ تم تسجيل البيانات وإرسالها إلى جدول البيانات بنجاح!';
-                        succBox.style.display = 'block';
-                        
-                        setTimeout(() => {
-                            succBox.style.display = 'none';
-                        }, 5000);
-                    } else {
-                        throw new Error(res.error || "خطأ غير معروف");
-                    }
-                })
-                .catch(err => {
-                    btn.disabled = false;
-                    btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> إعادة المحاولة';
-                    errBox.innerText = '❌ حدث خطأ أثناء الإرسال: ' + err.message;
-                    errBox.style.display = 'block';
+            fetch(SCRIPT_WEB_APP_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify(payload)
+            })
+            .then(r => r.json())
+            .then(res => {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> تسجيل المشارك وحفظ البيانات';
+                
+                document.getElementById('lastName').value = '';
+                document.getElementById('firstName').value = '';
+                document.getElementById('parentName').value = '';
+                document.getElementById('birth').value = '';
+                
+                document.getElementById('chkFlash').checked = false;
+                document.getElementById('chkCups').checked = false;
+                const smartRadios = document.querySelectorAll('input[name="smartGame"]');
+                smartRadios.forEach(rb => {
+                    rb.checked = (rb.value === "بدون مشاركة");
                 });
+
+                setFieldsLocked(false);
+                restrictLevels(null);
+                document.getElementById('smartAlert').style.display = 'none';
+
+                const lastNameField = document.getElementById('lastName');
+                if (lastNameField) {
+                    lastNameField.focus();
+                }
+                
+                if (res && res.emailSent) {
+                    succBox.innerHTML = '✅ تم حفظ وتحديث بيانات التلميذ بنجاح<br>📧 وتم إرسال بريد إلكتروني تأكيدي إلى <strong>' + payload.email + '</strong>';
+                    succBox.style.display = 'block';
+                } else {
+                    succBox.innerHTML = '✅ تم حفظ وتحديث بيانات التلميذ بنجاح';
+                    succBox.style.display = 'block';
+                }
+                
+                setTimeout(() => {
+                    succBox.style.display = 'none';
+                }, 5000);
+            })
+            .catch(err => {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> إعادة المحاولة';
+                errBox.innerText = '❌ حدث خطأ: ' + err.message;
+                errBox.style.display = 'block';
+            });
         }
     </script>
 </body>
