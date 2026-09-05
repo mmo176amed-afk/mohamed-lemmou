@@ -376,7 +376,6 @@
     </div>
 
     <script>
-        // ضع رابط الويب آب هنا
         const SCRIPT_WEB_APP_URL = "https://script.google.com/macros/s/AKfycby.../exec";
 
         let centerTimeout = null;
@@ -384,6 +383,25 @@
         let currentCoachesList = [];
 
         const lockedFields = ['club', 'coach', 'phone', 'email', 'chaperone', 'parentName', 'birth', 'wilaya'];
+
+        function callJsonp(url, callback) {
+            const callbackName = 'jsonp_cb_' + Math.round(100000 * Math.random());
+            window[callbackName] = function(data) {
+                delete window[callbackName];
+                if (script.parentNode) script.parentNode.removeChild(script);
+                callback(null, data);
+            };
+
+            const script = document.createElement('script');
+            const sep = url.indexOf('?') >= 0 ? '&' : '?';
+            script.src = url + sep + 'callback=' + callbackName;
+            script.onerror = function() {
+                delete window[callbackName];
+                if (script.parentNode) script.parentNode.removeChild(script);
+                callback(new Error('فشل الاتصال بالخادم'));
+            };
+            document.body.appendChild(script);
+        }
 
         function formatBirthDate(input) {
             let val = input.value;
@@ -526,37 +544,35 @@
             }
 
             centerTimeout = setTimeout(() => {
-                fetch(`${SCRIPT_WEB_APP_URL}?action=searchCenter&club=${encodeURIComponent(club)}`)
-                    .then(r => r.json())
-                    .then(res => {
-                        if (res && res.found && res.coaches && res.coaches.length > 0) {
-                            currentCoachesList = res.coaches;
+                const url = `${SCRIPT_WEB_APP_URL}?action=searchCenter&club=${encodeURIComponent(club)}`;
+                callJsonp(url, (err, res) => {
+                    if (!err && res && res.found && res.coaches && res.coaches.length > 0) {
+                        currentCoachesList = res.coaches;
 
-                            if (currentCoachesList.length === 1) {
-                                coachSelect.style.display = 'none';
-                                coachInput.style.display = 'block';
-                                coachInput.value = currentCoachesList[0].coach || '';
-                                if (currentCoachesList[0].phone) document.getElementById('phone').value = currentCoachesList[0].phone;
-                                if (currentCoachesList[0].email) document.getElementById('email').value = currentCoachesList[0].email;
-                                if (currentCoachesList[0].wilaya) setWilayaValue(currentCoachesList[0].wilaya);
-                            } else {
-                                coachInput.style.display = 'none';
-                                coachSelect.innerHTML = '<option value="">-- اختر المدرب المشرف --</option>';
-                                currentCoachesList.forEach((cItem, idx) => {
-                                    const opt = document.createElement('option');
-                                    opt.value = idx;
-                                    opt.textContent = cItem.coach;
-                                    coachSelect.appendChild(opt);
-                                });
-                                coachSelect.style.display = 'block';
-                            }
-                        } else {
-                            currentCoachesList = [];
+                        if (currentCoachesList.length === 1) {
                             coachSelect.style.display = 'none';
                             coachInput.style.display = 'block';
+                            coachInput.value = currentCoachesList[0].coach || '';
+                            if (currentCoachesList[0].phone) document.getElementById('phone').value = currentCoachesList[0].phone;
+                            if (currentCoachesList[0].email) document.getElementById('email').value = currentCoachesList[0].email;
+                            if (currentCoachesList[0].wilaya) setWilayaValue(currentCoachesList[0].wilaya);
+                        } else {
+                            coachInput.style.display = 'none';
+                            coachSelect.innerHTML = '<option value="">-- اختر المدرب المشرف --</option>';
+                            currentCoachesList.forEach((cItem, idx) => {
+                                const opt = document.createElement('option');
+                                opt.value = idx;
+                                opt.textContent = cItem.coach;
+                                coachSelect.appendChild(opt);
+                            });
+                            coachSelect.style.display = 'block';
                         }
-                    })
-                    .catch(err => console.error("Error searchCenter:", err));
+                    } else {
+                        currentCoachesList = [];
+                        coachSelect.style.display = 'none';
+                        coachInput.style.display = 'block';
+                    }
+                });
             }, 400);
         }
 
@@ -586,73 +602,71 @@
             }
 
             studentTimeout = setTimeout(() => {
-                fetch(`${SCRIPT_WEB_APP_URL}?action=searchStudent&lastName=${encodeURIComponent(lastName)}&firstName=${encodeURIComponent(firstName)}`)
-                    .then(r => r.json())
-                    .then(res => {
-                        if (res && res.found) {
-                            document.getElementById('club').value = res.club || '';
-                            
-                            const coachInput = document.getElementById('coach');
-                            const coachSelect = document.getElementById('coachSelect');
-                            coachSelect.style.display = 'none';
-                            coachInput.style.display = 'block';
-                            coachInput.value = res.coach || '';
+                const url = `${SCRIPT_WEB_APP_URL}?action=searchStudent&lastName=${encodeURIComponent(lastName)}&firstName=${encodeURIComponent(firstName)}`;
+                callJsonp(url, (err, res) => {
+                    if (!err && res && res.found) {
+                        document.getElementById('club').value = res.club || '';
+                        
+                        const coachInput = document.getElementById('coach');
+                        const coachSelect = document.getElementById('coachSelect');
+                        coachSelect.style.display = 'none';
+                        coachInput.style.display = 'block';
+                        coachInput.value = res.coach || '';
 
-                            document.getElementById('phone').value = res.phone || '';
-                            document.getElementById('email').value = res.email || '';
-                            document.getElementById('chaperone').value = res.chaperone || '';
-                            document.getElementById('parentName').value = res.parentName || '';
-                            
-                            if (res.birth) {
-                                let bVal = res.birth.toString();
-                                if (bVal.includes('-')) {
-                                    let bParts = bVal.split('-');
-                                    if (bParts.length === 3) {
-                                        bVal = bParts[2] + '/' + bParts[1] + '/' + bParts[0];
-                                    }
+                        document.getElementById('phone').value = res.phone || '';
+                        document.getElementById('email').value = res.email || '';
+                        document.getElementById('chaperone').value = res.chaperone || '';
+                        document.getElementById('parentName').value = res.parentName || '';
+                        
+                        if (res.birth) {
+                            let bVal = res.birth.toString();
+                            if (bVal.includes('-')) {
+                                let bParts = bVal.split('-');
+                                if (bParts.length === 3) {
+                                    bVal = bParts[2] + '/' + bParts[1] + '/' + bParts[0];
                                 }
-                                document.getElementById('birth').value = bVal;
-                            } else {
-                                document.getElementById('birth').value = '';
                             }
+                            document.getElementById('birth').value = bVal;
+                        } else {
+                            document.getElementById('birth').value = '';
+                        }
 
-                            setWilayaValue(res.wilaya);
-                            document.getElementById('level').value = res.level || '';
-                            
-                            restrictLevels(res.level);
+                        setWilayaValue(res.wilaya);
+                        document.getElementById('level').value = res.level || '';
+                        
+                        restrictLevels(res.level);
 
-                            document.getElementById('notes').value = res.notes || '';
-                            document.getElementById('chkFlash').checked = !!res.flashAnzan;
-                            document.getElementById('chkCups').checked = !!res.cups;
+                        document.getElementById('notes').value = res.notes || '';
+                        document.getElementById('chkFlash').checked = !!res.flashAnzan;
+                        document.getElementById('chkCups').checked = !!res.cups;
 
-                            const radios = document.querySelectorAll('input[name="smartGame"]');
-                            let matched = false;
-                            radios.forEach(rb => {
-                                if (rb.value === res.smartGame) {
-                                    rb.checked = true;
-                                    matched = true;
+                        const radios = document.querySelectorAll('input[name="smartGame"]');
+                        let matched = false;
+                        radios.forEach(rb => {
+                            if (rb.value === res.smartGame) {
+                                rb.checked = true;
+                                matched = true;
+                            }
+                        });
+                        if (!matched) radios[radios.length - 1].checked = true;
+
+                        if (res.attendanceType) {
+                            const attRadios = document.querySelectorAll('input[name="attendanceType"]');
+                            attRadios.forEach(arb => {
+                                if (arb.value === res.attendanceType || res.attendanceType.includes(arb.value)) {
+                                    arb.checked = true;
                                 }
                             });
-                            if (!matched) radios[radios.length - 1].checked = true;
-
-                            if (res.attendanceType) {
-                                const attRadios = document.querySelectorAll('input[name="attendanceType"]');
-                                attRadios.forEach(arb => {
-                                    if (arb.value === res.attendanceType || res.attendanceType.includes(arb.value)) {
-                                        arb.checked = true;
-                                    }
-                                });
-                            }
-
-                            setFieldsLocked(true);
-                            alertBox.style.display = 'flex';
-                        } else {
-                            setFieldsLocked(false);
-                            restrictLevels(null);
-                            alertBox.style.display = 'none';
                         }
-                    })
-                    .catch(err => console.error("Error searchStudent:", err));
+
+                        setFieldsLocked(true);
+                        alertBox.style.display = 'flex';
+                    } else {
+                        setFieldsLocked(false);
+                        restrictLevels(null);
+                        alertBox.style.display = 'none';
+                    }
+                });
             }, 400);
         }
 
@@ -714,55 +728,48 @@
 
             const url = `${SCRIPT_WEB_APP_URL}?action=save&data=${encodeURIComponent(JSON.stringify(payload))}`;
 
-            fetch(url)
-                .then(r => r.json())
-                .then(res => {
-                    btn.disabled = false;
-                    btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> تسجيل المشارك وحفظ البيانات';
-                    
-                    if (res && res.success) {
-                        document.getElementById('lastName').value = '';
-                        document.getElementById('firstName').value = '';
-                        document.getElementById('parentName').value = '';
-                        document.getElementById('birth').value = '';
-                        
-                        document.getElementById('chkFlash').checked = false;
-                        document.getElementById('chkCups').checked = false;
-                        const smartRadios = document.querySelectorAll('input[name="smartGame"]');
-                        smartRadios.forEach(rb => {
-                            rb.checked = (rb.value === "بدون مشاركة");
-                        });
+            callJsonp(url, (err, res) => {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> تسجيل المشارك وحفظ البيانات';
 
-                        setFieldsLocked(false);
-                        restrictLevels(null);
-                        document.getElementById('smartAlert').style.display = 'none';
-
-                        const lastNameField = document.getElementById('lastName');
-                        if (lastNameField) {
-                            lastNameField.focus();
-                        }
-                        
-                        if (res.emailSent) {
-                            succBox.innerHTML = '✅ تم حفظ وتحديث بيانات التلميذ بنجاح<br>📧 وتم إرسال بريد إلكتروني تأكيدي إلى <strong>' + payload.email + '</strong>';
-                        } else {
-                            succBox.innerHTML = '✅ تم حفظ وتحديث بيانات التلميذ بنجاح';
-                        }
-                        succBox.style.display = 'block';
-                        
-                        setTimeout(() => {
-                            succBox.style.display = 'none';
-                        }, 5000);
-                    } else {
-                        errBox.innerText = '❌ حدث خطأ: ' + (res.error || 'فشل الحفظ');
-                        errBox.style.display = 'block';
-                    }
-                })
-                .catch(err => {
-                    btn.disabled = false;
-                    btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> إعادة المحاولة';
-                    errBox.innerText = '❌ حدث خطأ أثناء الإرسال: ' + err.message;
+                if (err || !res || !res.success) {
+                    errBox.innerText = '❌ حدث خطأ: ' + (err ? err.message : (res ? res.error : 'فشل الاتصال'));
                     errBox.style.display = 'block';
+                    return;
+                }
+
+                document.getElementById('lastName').value = '';
+                document.getElementById('firstName').value = '';
+                document.getElementById('parentName').value = '';
+                document.getElementById('birth').value = '';
+                
+                document.getElementById('chkFlash').checked = false;
+                document.getElementById('chkCups').checked = false;
+                const smartRadios = document.querySelectorAll('input[name="smartGame"]');
+                smartRadios.forEach(rb => {
+                    rb.checked = (rb.value === "بدون مشاركة");
                 });
+
+                setFieldsLocked(false);
+                restrictLevels(null);
+                document.getElementById('smartAlert').style.display = 'none';
+
+                const lastNameField = document.getElementById('lastName');
+                if (lastNameField) {
+                    lastNameField.focus();
+                }
+                
+                if (res.emailSent) {
+                    succBox.innerHTML = '✅ تم حفظ وتحديث بيانات التلميذ بنجاح<br>📧 وتم إرسال بريد إلكتروني تأكيدي إلى <strong>' + payload.email + '</strong>';
+                } else {
+                    succBox.innerHTML = '✅ تم حفظ وتحديث بيانات التلميذ بنجاح';
+                }
+                succBox.style.display = 'block';
+                
+                setTimeout(() => {
+                    succBox.style.display = 'none';
+                }, 5000);
+            });
         }
     </script>
 </body>
